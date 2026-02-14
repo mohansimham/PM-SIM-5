@@ -1,0 +1,1103 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta property="og:title" content="Week 5: Problem Definition & Opportunity Sizing – Uber Simulation">
+  <meta property="og:description" content="10 real Uber decisions. Test your Problem Definition & Opportunity Sizing skills. One attempt. 100 points. Can you match what actually happened?">
+  <meta property="og:type" content="website">
+  <title>Week 5: Uber – Problem Definition & Opportunity Sizing | PM Simulation Series</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+  <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
+    body { font-family: 'Inter', sans-serif; }
+    :root { --uber-black: #000000; --uber-green: #00D4AA; --uber-gray: #f5f5f5; }
+    .slide-in { animation: slideIn 0.35s ease-out; }
+    @keyframes slideIn { from { opacity: 0; transform: translateX(24px); } to { opacity: 1; transform: translateX(0); } }
+    .pulse-once { animation: pulseOnce 1.2s ease-in-out; }
+    @keyframes pulseOnce { 0%,100%{opacity:1;} 50%{opacity:0.65;} }
+    .card-hover { transition: transform 0.18s ease, box-shadow 0.18s ease; }
+    .card-hover:hover { transform: translateY(-3px); box-shadow: 0 8px 25px rgba(0,0,0,0.13); }
+    .option-radio { width: 22px; height: 22px; min-width: 22px; border: 2.5px solid #cbd5e1; border-radius: 50%; cursor: pointer; transition: all 0.15s; display: flex; align-items: center; justify-content: center; }
+    .option-radio.selected { border-color: #000000; background: #000000; }
+    .option-radio.selected::after { content: ''; width: 10px; height: 10px; background: white; border-radius: 50%; }
+    .option-row { cursor: pointer; border: 2px solid #e2e8f0; border-radius: 12px; padding: 14px 16px; transition: all 0.15s; display: flex; gap: 14px; align-items: flex-start; background: white; }
+    .option-row:hover { border-color: #00D4AA; background: #f0fffe; }
+    .option-row.selected { border-color: #000000; background: #f5f5f5; }
+    .option-label { font-weight: 700; font-size: 15px; color: #1e293b; line-height: 1.35; }
+    .option-reason { font-size: 13.5px; color: #475569; line-height: 1.5; margin-top: 4px; }
+    .progress-bar-fill { transition: width 0.45s ease-in-out; }
+    .feedback-box { border-left: 4px solid; padding: 14px 16px; border-radius: 0 10px 10px 0; margin-top: 10px; }
+    .correct-fb { border-color: #22c55e; background: #f0fdf4; }
+    .partial-fb { border-color: #f59e0b; background: #fffbeb; }
+    .wrong-fb { border-color: #ef4444; background: #fef2f2; }
+    .key-concept-box { background: linear-gradient(135deg, #f0fffe 0%, #e6f9f6 100%); border-left: 4px solid #00D4AA; padding: 14px 16px; border-radius: 0 10px 10px 0; margin-bottom: 16px; }
+    .attribution-strip { border-top: 1px solid #e2e8f0; margin-top: 20px; padding-top: 14px; text-align: center; }
+    .uber-btn-primary { background: #000000 !important; color: white !important; }
+    .uber-btn-primary:hover { background: #1a1a1a !important; }
+    .landing-bg { background: linear-gradient(135deg, #000000 0%, #1a1a1a 50%, #141414 100%); }
+  </style>
+</head>
+<body class="bg-slate-50 min-h-screen">
+<div id="root"></div>
+<script>
+const { useState, useEffect, useCallback } = React;
+const { createElement: h } = React;
+
+/* ─────────────────────────────────────────────
+   CONFIG
+───────────────────────────────────────────── */
+const GOOGLE_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbyVTFrwM9a8v2JKFO34qN8TwO0790IocNTT5xRH_pU6o8bsxljf-knU2zhmVV8saWwv/exec';
+const SEED_COUNT = 263;
+const WEEK_NUM = 5;
+const SIM_NAME = 'Week 5 - Problem Definition & Opportunity Sizing';
+const LS = {
+  email: `pmSimEmail_w${WEEK_NUM}`,
+  start: `pmSimStartTime_w${WEEK_NUM}`,
+  failed: `pmSimFailedEvents_w${WEEK_NUM}`,
+  attempted: `product_manager_simulation_week${WEEK_NUM}_attempted`,
+  answers: `pmSimAnswers_w${WEEK_NUM}`,
+  question: `pmSimQuestion_w${WEEK_NUM}`
+};
+
+const SIMULATION_CATALOG = [
+  { week:1, company:'Airbnb', topic:'PM Fundamentals', emoji:'🏠', color:'#FF5A5F', url:'https://mohansimham.github.io/pm-simulations/week1-airbnb-pm-fundamentals.html' },
+  { week:2, company:'Spotify', topic:'Strategic Thinking', emoji:'🎵', color:'#1DB954', url:'https://mohansimham.github.io/pm-simulations/week2-spotify-strategic-thinking.html' },
+  { week:3, company:'Netflix', topic:'Customer Discovery', emoji:'🎬', color:'#E50914', url:'https://mohansimham.github.io/pm-simulations/week3-netflix-customer-discovery.html' },
+  { week:4, company:'Amazon Prime', topic:'Prioritization Frameworks', emoji:'📦', color:'#FF9900', url:'https://mohansimham.github.io/pm-simulations/week4-amazon-prioritization.html' },
+  { week:5, company:'Uber', topic:'Problem Definition', emoji:'🚗', color:'#000000', url:'https://mohansimham.github.io/pm-simulations/week5-uber-problem-definition.html' },
+];
+
+/* ─────────────────────────────────────────────
+   TRACKING
+───────────────────────────────────────────── */
+const sendToGoogleSheets = (data) => {
+  try {
+    const url = GOOGLE_SCRIPT_URL + '?data=' + encodeURIComponent(JSON.stringify(data));
+    const img = new Image();
+    img.src = url;
+    retryFailedEvents();
+  } catch(e) {
+    try {
+      const failed = JSON.parse(localStorage.getItem(LS.failed) || '[]');
+      failed.push({ ...data, failedAt: new Date().toISOString(), retryCount: (data.retryCount||0) });
+      localStorage.setItem(LS.failed, JSON.stringify(failed));
+    } catch(_){}
+  }
+};
+
+const retryFailedEvents = () => {
+  try {
+    const failed = JSON.parse(localStorage.getItem(LS.failed) || '[]');
+    if(!failed.length) return;
+    const stillFailed = [];
+    for(const ev of failed) {
+      if((ev.retryCount||0) >= 3) continue;
+      try {
+        const img = new Image();
+        img.src = GOOGLE_SCRIPT_URL + '?data=' + encodeURIComponent(JSON.stringify(ev));
+      } catch(_){ ev.retryCount = (ev.retryCount||0)+1; stillFailed.push(ev); }
+    }
+    if(stillFailed.length) localStorage.setItem(LS.failed, JSON.stringify(stillFailed));
+    else localStorage.removeItem(LS.failed);
+  } catch(_){}
+};
+
+const fetchAttemptCount = () => new Promise(resolve => {
+  const cb = 'simCountCb_' + Date.now();
+  window[cb] = (d) => { delete window[cb]; document.getElementById(cb+'_s')?.remove(); resolve((d.count||0)+SEED_COUNT); };
+  const s = document.createElement('script');
+  s.id = cb+'_s';
+  s.src = GOOGLE_SCRIPT_URL + '?action=count&simulation=' + encodeURIComponent('Week 5') + '&callback=' + cb;
+  s.onerror = () => { delete window[cb]; resolve(SEED_COUNT); };
+  document.head.appendChild(s);
+  setTimeout(() => { if(window[cb]){ delete window[cb]; resolve(SEED_COUNT); } }, 5000);
+});
+
+/* ─────────────────────────────────────────────
+   CONTENT — 10 QUESTIONS
+───────────────────────────────────────────── */
+const QUESTIONS = [
+  {
+    id:1,
+    framework:'Problem Statement Framework (JTBD)',
+    date:'December 2008 → March 2009',
+    title:'Defining the Core Problem',
+    scenario:`**Paris, December 2008.** Travis Kalanick and Garrett Camp are stranded in the snow outside LeWeb, one of Europe's top tech conferences. Every taxi is taken. They've been waiting 20 minutes in 2°C weather. Travis is furious. "In 2008, in one of the world's most connected cities, we can't get a car?" he mutters. Garrett pulls out his phone: "What if you could tap a button and a car appears?"
+
+Back in **San Francisco, March 2009**, the two are designing their new venture. Their seed investor asks the hard question: "What problem are you actually solving?" Travis has three versions of the answer. Version A focuses on taxi inefficiency. Version B focuses on a technology gap. Version C focuses on what riders fundamentally want. Version D is market-opportunity-first framing.
+
+The Jobs-to-be-Done (JTBD) framework, popularized by Clayton Christensen, teaches that customers don't buy products — they hire them to get a job done. Problem statements framed in JTBD language unlock broader solution spaces and avoid over-constraining to existing categories.
+
+**Garrett:** "We could say we're building a better taxi app." **Travis:** "Or we could say something much bigger." Which framing creates the most defensible, insight-driven product strategy?`,
+    question:'Using the Jobs-to-be-Done framework, how should Travis and Garrett define UberCab\'s core problem statement?',
+    answers:[
+      {
+        id:'A', points:10,
+        label:'Urban professionals cannot get a reliable ride on-demand, causing them to miss moments that matter — meetings, airports, nights out.',
+        reason:'JTBD framing: focuses on the human outcome, not the product category',
+        feedback:`**Mohan Simham's Comments — Optimal Answer (10/10)**\n\nThis is textbook Jobs-to-be-Done framing. Notice what it does NOT say: "taxis," "app," or "technology." It anchors on the human outcome — "moments that matter" — which immediately expands the solution space beyond replacing taxis to serving any reliability-sensitive transportation need.\n\nThis framing is what allowed Uber to justify UberX (not just black cars), UberPool (shared rides), Uber for Business (corporate accounts), and eventually Uber Eats (same JTBD applied to food). The problem definition was the moat.\n\n**What actually happened:** Travis Kalanick described the original insight as "what if you could push a button and a car appears?" — a pure JTBD insight that said nothing about the existing taxi industry. This mental model gave Uber permission to redefine transportation entirely, not iterate on taxis.\n\n**Framework applied:** Jobs-to-be-Done (Christensen). The job: reliably get somewhere when it matters. The emotional dimension: peace of mind. The social dimension: not be seen struggling for a cab.`
+      },
+      {
+        id:'B', points:7,
+        label:'Taxis in US cities are unreliable, expensive, and cannot be tracked — we need a smarter dispatch system.',
+        reason:'Accurate pain but constrained to existing category of "taxi dispatch"',
+        feedback:`**Mohan Simham's Comments — Good Answer (7/10)**\n\nThis is a legitimate problem statement and captures real pain. The weakness: it frames the solution space as "smarter dispatch" which anchors the team to the existing taxi regulatory framework, the existing pricing model, and existing driver supply.\n\nWhen you define the problem as "taxi dispatch needs fixing," you'll build a better taxi company. When you define it as "people can't reliably get places," you build a transportation platform.\n\n**The strategic cost:** This framing would have resulted in Uber negotiating with taxi medallion owners, operating under taxi licensing, and never launching UberX with civilian drivers. The addressable market would have been 10× smaller.\n\n**Lesson:** Good problem statements are prescriptive about the pain but not prescriptive about the solution mechanism. "Dispatch" is already half-solution.`
+      },
+      {
+        id:'C', points:4,
+        label:'There is no mobile app that lets you request a taxi — we need to build the first tap-to-ride smartphone experience.',
+        reason:'Technology-led framing — describes a solution, not a problem',
+        feedback:`**Mohan Simham's Comments — Partial Answer (4/10)**\n\nThis is solution-first thinking disguised as a problem statement. "There is no mobile app" describes a gap in the technology landscape — but why does that matter? What human problem does that gap cause?\n\n**In the Problem Space vs Solution Space framework** (Marty Cagan's lens), this answer jumps immediately to the solution space: "a smartphone experience." This is one of the most common PM mistakes — leading with the technology before validating the human problem.\n\n**The strategic danger:** If the problem is "no app exists," you're one competitor away from having no problem at all. If the problem is "people can't get reliable transportation," the app is just one of many possible solutions — and your problem space remains valuable even as technology evolves.\n\n**What Uber actually avoided:** They didn't position as "first taxi app" — dozens had tried that. They positioned around the fundamental transportation access problem.`
+      },
+      {
+        id:'D', points:2,
+        label:'The US ground transportation market is an $11 billion industry ripe for disruption — we should capture 15% market share within 5 years.',
+        reason:'Market-opportunity framing — describes the prize, not the problem to solve',
+        feedback:`**Mohan Simham's Comments — Poor Answer (2/10)**\n\nThis is a market sizing statement, not a problem statement. It tells investors why they should fund you, but tells the product team nothing about what to build or who to build it for.\n\n**The fundamental error:** "Market ripe for disruption" is investor language that masks the absence of customer insight. If you lead every team discussion with "$11 billion opportunity," you'll optimize for market capture instead of customer value — and you'll miss the insight that the $11B is actually the floor, not the ceiling.\n\n**Bill Gurley's famous 2014 essay** made exactly this point about Uber: the true TAM wasn't the taxi industry — it was all ground transportation, which was 10–100× larger. But Gurley's insight was only possible because Uber started with a deep customer problem, not a market sizing exercise.\n\n**The PM principle:** Problems are user-centric. Markets are investor-centric. Confusing the two produces strategies that look good on pitch decks but fail in product discovery.`
+      }
+    ]
+  },
+  {
+    id:2,
+    framework:'TAM / SAM / SOM Analysis',
+    date:'October 2011',
+    title:'The $5 Billion vs. $500 Billion Debate',
+    scenario:`**New York City, October 2011.** Uber has just raised its Series B — $37 million led by Benchmark Capital. Partner **Bill Gurley** sits across from Travis Kalanick in Benchmark's Menlo Park office. Uber has expanded to 7 US cities, is generating $15M in annualized revenue, and completing ~30,000 rides per month.
+
+Travis opens with his standard pitch: "The US taxi and limousine market is approximately $11 billion annually. We're going to own it." Gurley leans back. "Travis, you're thinking too small. You're measuring the wrong market."
+
+The tension in the room is strategic: if Travis defines TAM as the taxi market, he's building a company worth a few billion at best. But an investor with Benchmark's ambitions needs to underwrite a $50B+ company. The alternative TAMs on the table:
+
+**Option A:** $11B US taxi/limo market
+**Option B:** $100B global taxi market  
+**Option C:** $2T global personal transportation (cars + taxis + public transit as substitutes)
+**Option D:** $5T total ground logistics including freight, food delivery, and last-mile
+
+Each framing changes everything: hiring strategy, geographic expansion speed, which competitors to fear, and how much capital to raise. Bill Gurley later published his famous analysis arguing Uber's TAM was orders of magnitude larger than the taxi industry.`,
+    question:'Which TAM definition gives Uber the most strategically useful market sizing for product and investment decisions?',
+    answers:[
+      {
+        id:'A', points:3,
+        label:'$11B US taxi/limo market — the directly addressable segment Uber currently competes in',
+        reason:'Most conservative, most defensible, but most constraining',
+        feedback:`**Mohan Simham's Comments — Poor Answer (3/10)**\n\nThis is the classic "incumbent industry" trap in TAM analysis. When you define TAM as the market that already exists, you implicitly cap your strategy to taking share from incumbents — rather than creating demand.\n\n**The substitution problem:** Taxi usage is suppressed demand. Millions of people who "could take a taxi" instead drive, carpool, or don't make the trip at all because the experience is too unreliable. When you improve reliability and reduce friction, you convert non-consumption — which is invisible in the $11B number.\n\n**Bill Gurley's point:** The $11B is a measurement of how often taxis were chosen despite their limitations. It's not a measurement of transportation demand.\n\n**Lesson in TAM analysis:** Always ask — "How much of the unaddressed demand does our product serve?" A true TAM includes jobs currently being done poorly by alternatives or not done at all.`
+      },
+      {
+        id:'B', points:6,
+        label:'$100B global taxi market — international expansion makes the opportunity 10× larger',
+        reason:'Better scope, still anchored to existing behavior',
+        feedback:`**Mohan Simham's Comments — Partial Answer (6/10)**\n\nGlobal scope is the right instinct — and Uber did go international rapidly, reaching 60+ countries by 2016. But this framing still suffers from the same definitional problem as the $11B answer: it counts only current taxi usage.\n\n**The methodology is correct (global thinking) but the market definition is too narrow.** A TAM built from "number of current taxi rides × average fare" only captures replacement demand, not expansion demand.\n\n**What this gets right:** International TAM analysis is genuinely important for Uber's strategy. Different cities have different taxi penetration rates — London has ~25,000 licensed cabs while Mumbai has suppressed demand due to poor service quality. The global opportunity is real.\n\n**What it misses:** The carpool opportunity (UberPool), the corporate travel opportunity (Uber for Business), the food delivery opportunity (Uber Eats). All of these emerged from the same platform but are invisible in a "taxi market" TAM.`
+      },
+      {
+        id:'C', points:10,
+        label:'$2T global personal transportation — includes all car trips (not just taxis) since Uber substitutes for car ownership',
+        reason:'Correct TAM: measures the full job-to-be-done, not just the incumbent category',
+        feedback:`**Mohan Simham's Comments — Optimal Answer (10/10)**\n\nThis is the TAM framework that Bill Gurley articulated in his famous June 2014 essay "How to Miss By a Mile: An Alternative Look at Uber's Market Size." He argued Uber's correct TAM wasn't the taxi industry but all personal vehicle trips — because Uber was replacing the need to own a car, not just replacing taxi usage.\n\n**The framework at work — TAM/SAM/SOM:**\n• **TAM:** All urban/suburban personal transportation globally (~$2T). This is the full market if everyone could use Uber for every trip.\n• **SAM:** Markets where Uber can operate legally and economically (70+ countries, dense urban areas) — roughly $500B.\n• **SOM:** Uber's realistically capturable share in 5 years given competition and capital — at IPO, ~$75B gross bookings annually.\n\n**The insight that validated this:** By 2023, Uber had 150M monthly active users — most of whom are NOT replacing taxi trips. They're replacing personal car trips, rental cars, and public transit. The $2T framing was correct.\n\n**PM lesson:** Your TAM should be defined by the Job-to-be-Done, not the incumbent industry you're disrupting.`
+      },
+      {
+        id:'D', points:7,
+        label:'$5T total ground logistics — includes freight and delivery, giving Uber the broadest possible platform story',
+        reason:'Ambitious but premature — risks losing focus in early stage',
+        feedback:`**Mohan Simham's Comments — Good Answer (7/10)**\n\nThe $5T framing is defensible and ultimately where Uber ended up — Uber Freight (launched 2017), Uber Eats (2014), and last-mile logistics are all real businesses. By 2024, Uber Eats represented ~30% of gross bookings.\n\n**Why it scores 7, not 10:** In 2011, arguing for a $5T TAM that includes freight and food delivery requires Uber to defend capabilities it does not yet have. Investors and analysts will ask: "Show me how a ride-hailing company naturally extends into freight trucking." Without a product roadmap answer, the broad TAM hurts credibility.\n\n**The strategic timing principle in TAM analysis:** Your TAM should be ambitious but believable at your current stage. A seed-stage company saying "$5T" without platform evidence will get dismissed. The same claim at Series D (with Uber Eats and Freight already launched) is credible.\n\n**Lesson:** TAM framing must match your current product evidence. Expand the definition as you prove adjacencies, not before.`
+      }
+    ]
+  },
+  {
+    id:3,
+    framework:'Opportunity Solution Tree (Teresa Torres)',
+    date:'January 2012',
+    title:'The UberX Decision — Problem Space First',
+    scenario:`**San Francisco, January 2012.** Uber is doing well with its black car service — professional drivers, luxury vehicles, premium pricing. Revenue is growing 30% month-over-month. Then Travis drops a bomb in the product review meeting:
+
+"I want to launch UberX — regular cars, regular people, 40% cheaper than UberBlack. We open it up to any licensed driver with a 4-door car."
+
+Head of Product **Brittany Laughlin** pulls him aside: "Travis, are we solving a problem or just copying Lyft? Because Lyft just announced ridesharing and they'll own the low-cost positioning first. We could be reactive."
+
+The debate splits the team:
+- **Camp:** "The problem is that most people can't afford UberBlack regularly. We're leaving 80% of demand on the table."  
+- **Engineering lead:** "We should just make UberBlack cheaper by adding more drivers."
+- **Brittany:** "Before we pick a solution, can we map the opportunity tree? What's the outcome we want? What are all the possible solutions? Which assumptions need testing?"
+
+Teresa Torres's **Opportunity Solution Tree** framework says: Start with a desired outcome → discover multiple opportunity areas → map multiple possible solutions per opportunity → run experiments before committing.
+
+Travis has been asked to give the board a product direction by Friday. It's Tuesday.`,
+    question:'Using the Opportunity Solution Tree framework, what is the correct first step Uber\'s product team should take before committing to UberX?',
+    answers:[
+      {
+        id:'A', points:10,
+        label:'Define the desired outcome first: "Increase Uber\'s total rides among non-luxury travellers" — then map multiple opportunity areas before evaluating solutions.',
+        reason:'Starts at the outcome node, prevents premature solution commitment',
+        feedback:`**Mohan Simham's Comments — Optimal Answer (10/10)**\n\nThis is the Opportunity Solution Tree (OST) in action. Teresa Torres's framework demands: **Outcome → Opportunities → Solutions → Experiments**. Never start at Solutions.\n\n**Why the outcome definition matters so much:** If the outcome is "increase rides among non-luxury travelers," multiple solutions are valid:\n1. Lower UberBlack prices by increasing driver supply\n2. Launch UberX with personal cars (what happened)\n3. Partner with taxi fleets for bulk pricing\n4. Launch a "UberPool" to split fares on existing premium rides\n\nAll four solutions address the same outcome. By mapping them first, Uber could have run small experiments (a 2-week test in one neighborhood) before committing to a complete product line.\n\n**What actually happened:** Uber did launch UberX in July 2012 and it became 80%+ of all rides within 3 years. But the product team later admitted the Lyft competitive pressure caused them to skip proper discovery — a regret that led to internal culture issues as the product scaled faster than process.\n\n**OST principle:** The outcome node is not the solution. It's the intended business result. Keeping it explicit prevents teams from treating "launch UberX" as a strategic goal rather than a solution hypothesis.`
+      },
+      {
+        id:'B', points:5,
+        label:'Start competitive analysis — Lyft is already in the ridesharing space, so understanding their product defines our opportunity.',
+        reason:'Competitive framing is valid input but creates "me-too" product thinking',
+        feedback:`**Mohan Simham's Comments — Partial Answer (5/10)**\n\nCompetitive analysis is a legitimate input to opportunity discovery, but it is not the starting node in an Opportunity Solution Tree. Starting with competitors means you define your opportunity as "what they haven't done yet" — an inherently reactive and bounded search.\n\n**The strategic danger:** If Uber had defined its opportunity by Lyft's gaps, it would have built the Lyft it thought didn't exist — rather than building from Uber's unique capabilities (existing premium driver network, brand trust, liquidity in major cities).\n\n**Teresa Torres's guidance:** Competitive insight belongs in the "Opportunity" layer of the OST, not as the starting point. It helps you validate that an opportunity is real (others are pursuing it = market exists) but doesn't generate the full solution space.\n\n**What a competitor-first approach misses:** It would never surface the insight that Uber's premium reputation was actually a liability in attracting price-sensitive riders — and that the UberX solution needed to be clearly separated (different cars, different tier) to avoid brand dilution.`
+      },
+      {
+        id:'C', points:7,
+        label:'Survey existing UberBlack riders to understand why price-sensitive users dropped off, then use that insight to define the opportunity.',
+        reason:'Good discovery methodology but skips the outcome definition step',
+        feedback:`**Mohan Simham's Comments — Good Answer (7/10)**\n\nUser research is essential and directly relevant here. Surveying lapsed riders or non-adopters (users who heard of Uber but didn't convert) would surface genuine opportunity insights. This is better than jumping to UberX as a solution.\n\n**Why it's not optimal:** The OST framework requires you to define the desired outcome before conducting discovery. Without an outcome node, your survey questions don't have a clear anchor — you'll collect interesting data but not necessarily decision-relevant data.\n\n**Example:** If your outcome is "increase monthly rides," your survey focuses on frequency barriers. If your outcome is "increase total Uber users," your survey focuses on first-time conversion. Different outcomes, completely different questions — and potentially different solutions.\n\n**What's right about this answer:** Talking to users who tried Uber but didn't stick would reveal that price was the primary barrier — which directly validates the UberX opportunity. The insight that "70% of trial users said they'd use Uber monthly if it was 40% cheaper" is exactly the kind of evidence that should precede a major product launch.\n\n**Upgrade this answer by:** Pairing the research with a clear outcome statement first.`
+      },
+      {
+        id:'D', points:2,
+        label:'Fast-follow Lyft immediately — launch UberX this week as a competitive response before Lyft gains market share.',
+        reason:'Speed is valued but skips the entire discovery phase',
+        feedback:`**Mohan Simham's Comments — Poor Answer (2/10)**\n\nThis is the "build fast, validate never" trap. Speed is a legitimate competitive consideration — Lyft did gain early mindshare in the personal ridesharing space. But fast-following without any discovery produces at best a functional product and at worst a product that creates problems you didn't anticipate.\n\n**What Uber actually discovered later:** When UberX launched at speed, the driver onboarding quality was inconsistent (higher accident rates than UberBlack), the insurance framework wasn't ready (creating major liability gaps), and customer service volume spiked 400% as lower-quality experiences increased complaints.\n\n**The OST principle:** Even a fast competitive response benefits from 48–72 hours of structured discovery. "What do price-sensitive riders need that we don't currently offer?" is a solvable question with a short research sprint.\n\n**PM lesson:** There is almost never a situation where zero discovery is better than some discovery. The question is how much discovery is enough — and the answer is usually more than zero, calibrated to the size of the bet.`
+      }
+    ]
+  },
+  {
+    id:4,
+    framework:'Assumption Mapping (Leap-of-Faith Assumptions)',
+    date:'March 2014',
+    title:'Entering India — Which Assumptions to Test First',
+    scenario:`**San Francisco, March 2014.** Uber has operations in 60+ US cities and is eyeing international expansion. India is a priority: **1.2 billion people, growing smartphone penetration, and a notorious taxi problem** — auto-rickshaws that refuse fares, unmetered taxis with route scamming, and safety concerns for women traveling alone after dark.
+
+Head of International **Allen Penn** has built an expansion model based on five core assumptions:
+
+**Assumption 1 (Market):** Indian consumers will pay premium fares (2–3× local auto-rickshaw rates) for a safer, air-conditioned ride.
+
+**Assumption 2 (Supply):** India's car-owning population includes enough qualified drivers willing to earn ₹30,000–50,000/month through Uber.
+
+**Assumption 3 (Regulatory):** Municipal transport authorities will permit app-based ride-hailing under existing taxi or tourism vehicle licenses.
+
+**Assumption 4 (Payment):** Indian users can pay by credit/debit card (Uber's payment model) — or that cashless payment behavior is adoptable.
+
+**Assumption 5 (Safety):** Uber's driver verification system (license check, background check) is sufficient to meet safety expectations in the Indian market.
+
+A December 2014 incident in Delhi — a Uber driver assaulted a passenger — will temporarily suspend Uber's Delhi operations. But in March 2014, the board must decide: which assumption carries the most consequence if wrong?`,
+    question:'Using Assumption Mapping, which assumption should Uber prioritize testing FIRST before full India rollout?',
+    answers:[
+      {
+        id:'A', points:7,
+        label:'Assumption 1 (Willingness to Pay) — test whether Indians will pay premium fares using a small 2-week paid pilot in Mumbai.',
+        reason:'Revenue foundation assumption — valid to test early',
+        feedback:`**Mohan Simham's Comments — Good Answer (7/10)**\n\nWillingness to pay is a core assumption for any marketplace business, and testing it early is good practice. In Lean Startup terms, this is a "value hypothesis" — does the product create enough value that customers will pay the price you need to be viable?\n\n**What the data showed:** When Uber launched in Bangalore in August 2013, conversion was initially poor at premium pricing. Uber India was forced to introduce UberGo (smaller cars, lower cost) by 2015, and launched cash payments by 2016 — both direct responses to WTP assumptions being wrong.\n\n**Why it's not the #1 priority:** Willingness to pay can be tested relatively quickly and corrected (lower prices). It's a continuous variable with many options. Compare this to a binary regulatory or safety assumption: if the regulation answer is "no, you're illegal," there is no correction — you simply cannot operate.\n\n**Assumption Mapping principle:** Rank assumptions by two factors: (1) How consequential is it if wrong? (2) How quickly can you learn? Safety and regulatory assumptions score highest on consequence; WTP is highly learnable.`
+      },
+      {
+        id:'B', points:4,
+        label:'Assumption 2 (Driver Supply) — test driver availability by posting listings in newspapers and WhatsApp groups before launch.',
+        reason:'Important but supply problems are typically solvable with incentives',
+        feedback:`**Mohan Simham's Comments — Partial Answer (4/10)**\n\nDriver supply is genuinely important — a marketplace with no supply has no product. And testing supply before demand is smart marketplace thinking: you don't want 10,000 users with zero cars available.\n\n**However, driver supply is the most solvable assumption on the list.** Uber's launch playbook globally has been: overpay drivers to get supply, subsidize rides to build demand, then reduce incentives as the marketplace matures. India's driver supply was ultimately robust — Uber onboarded 200,000+ driver-partners within 18 months of launch.\n\n**The assumption that proved wrong here:** The real supply problem in India wasn't driver quantity — it was driver verification quality. Uber's background check process relied on documents that could be forged, and the December 2014 assault exposed the gap between "drivers passed our check" and "drivers are actually safe."\n\n**Assumption Mapping principle:** When ranking assumptions, ask "if this is wrong, can we recover?" Driver supply = yes, recoverable with incentive changes. Safety infrastructure = potentially catastrophic reputational and regulatory consequence.`
+      },
+      {
+        id:'C', points:3,
+        label:'Assumption 4 (Payment Infrastructure) — test cashless payment adoption since Uber\'s model depends entirely on card payments.',
+        reason:'Real challenge but solvable with product iteration',
+        feedback:`**Mohan Simham's Comments — Partial Answer (3/10)**\n\nPayment infrastructure is a legitimate concern — in 2014, India had relatively low credit card penetration (~3% of the population). Cash was king. And Uber's core product experience was frictionless cashless payment.\n\n**This assumption did fail:** Uber India eventually launched cash payments in 2016 and UPI (unified payments interface) integration later. The product team had to rebuild a core assumption of the business model for this market.\n\n**Why it's not the #1 priority:** Payment failures are product problems with engineering solutions. Uber could (and did) add cash payment as a market adaptation within months. Contrast with a safety incident, which creates regulatory shutdowns, media crises, and can end operations entirely in a market.\n\n**The learning:** Assumption Mapping should separate "things that would cause us to fail slowly" (WTP, payment method) from "things that could cause immediate catastrophic failure" (safety incident, regulatory prohibition). Prioritize testing existential assumptions first.`
+      },
+      {
+        id:'D', points:10,
+        label:'Assumption 5 (Safety Infrastructure) — verify that Uber\'s background check system is legally and practically sufficient for India before scaling.',
+        reason:'Highest consequence if wrong — regulatory shutdown + irreversible reputational damage',
+        feedback:`**Mohan Simham's Comments — Optimal Answer (10/10)**\n\nThis is the correct Assumption Mapping answer. In Eric Ries's framework, the most dangerous assumptions are "Leap-of-Faith Assumptions" — the ones your entire strategy rests on, where being wrong is catastrophic.\n\n**Why Safety is #1 here:**\n• **Consequence:** A single safety incident (which did occur in December 2014) resulted in Delhi banning Uber, 5 other cities threatening bans, and parliamentary hearings on ride-hailing safety.\n• **Recoverability:** Zero. Once a major safety incident occurs, the regulatory and reputational damage takes years to repair — if it can be repaired at all.\n• **Testability:** This assumption is highly testable before launch. Audit your background check process against local law enforcement databases. Partner with local police to verify checks. Test 100 driver applications to assess forgery rates.\n\n**What actually happened:** The December 2014 incident revealed that Uber's background checks relied on documents that could be falsified in India, and the company had no police verification integration. This was entirely testable before launch.\n\n**The PM principle:** Assumption Mapping prioritizes by (Consequence × Learnability). Safety = maximum consequence, highly learnable pre-launch. Always run the catastrophic test first.`
+      }
+    ]
+  },
+  {
+    id:5,
+    framework:'Opportunity Sizing with Market Proxies',
+    date:'August 2014',
+    title:'Sizing the UberPool Opportunity',
+    scenario:`**San Francisco, August 2014.** Lyft has just launched "Lyft Line" — shared rides where strangers heading the same direction split a car. The price is approximately 60% of a regular Lyft ride. Within 3 weeks, Lyft Line is generating 25% of all Lyft rides in San Francisco.
+
+Travis calls an emergency product review. "We need UberPool live in 30 days. I need the market size."
+
+Product Manager **Jonathan Golden** (who will later write about this in his blog) faces a classic problem: how do you size a market that doesn't exist yet? No one has measured "shared ride demand" before.
+
+The team has four approaches:
+
+**Method A — Analogous markets:** Carpooling services like Waze Carpool and corporate vanpools serve ~2M daily users in the US — suggests real latent demand.
+
+**Method B — Bottom-up behavioral analysis:** Uber's own data shows 18% of current rides have origin and destination within 0.5 miles of another simultaneous rider — those are natural pool candidates.
+
+**Method C — Top-down TAM:** The global urban transit market (buses, metro) is $180B annually — pool rides could capture 5% of commuters switching from transit.
+
+**Method D — Competitive proxy:** Lyft Line went from 0 to 25% of rides in 3 weeks. Apply the same adoption rate to Uber's 5× larger ride volume.`,
+    question:'Which opportunity sizing method should Jonathan Golden use to convince Travis the UberPool investment is justified?',
+    answers:[
+      {
+        id:'A', points:6,
+        label:'Method A — Analogous markets show 2M daily carpoolers, validating latent demand for shared rides.',
+        reason:'Good directional evidence but weak on Uber-specific conversion rates',
+        feedback:`**Mohan Simham's Comments — Good Answer (6/10)**\n\nAnalogous market sizing is a powerful technique, especially for genuinely new product categories. When there's no direct market measurement, you look for markets that satisfy a similar customer need.\n\n**What works here:** The 2M daily carpoolers prove the behavior exists. People do choose to share rides with strangers for economic reasons. This is a valuable "is the behavior possible?" test.\n\n**The limitation:** The carpooling market has structural differences from on-demand ridesharing. Corporate vanpools require pre-scheduling. Waze Carpool requires reciprocal behavior (you drive sometimes). The conversion rate from "will carpool" to "will UberPool" is unknown and potentially very different.\n\n**Analogous market best practice:** Use multiple analogies, not one. "20% of current Uber riders use public transit in cities where we operate" (behavioral analog) + "2M carpoolers exist" (market analog) + Lyft Line data (direct competitive analog) together create a compelling sizing case.\n\n**What actually happened:** UberPool launched September 2014 and within 12 months represented 20%+ of Uber rides in major cities — consistent with the behavioral signal in Method B.`
+      },
+      {
+        id:'B', points:10,
+        label:'Method B — Uber\'s own data shows 18% of rides have natural pool candidates — this is the most accurate signal of real demand.',
+        reason:'Internal behavioral data is the gold standard for sizing known-user opportunity',
+        feedback:`**Mohan Simham's Comments — Optimal Answer (10/10)**\n\nThis is the PM gold standard for opportunity sizing: using your own product data to find the signal. When you have real user behavior, you don't need proxies — you have direct evidence.\n\n**Why 18% is so powerful:**\n• It's not a survey ("would you share a ride?") — which overestimates intention\n• It's not a competitive proxy — which doesn't account for Uber-specific behavior\n• It's actual GPS data from real riders — the most reliable leading indicator available\n\n**The math this enables:** If Uber is doing 1M rides/day globally in August 2014, and 18% = 180,000 rides have pool-eligible pairs, that's the natural floor demand without any marketing or price incentive. Apply a conservative 30% conversion (some riders won't want to share) = 54,000 pool rides/day at launch. At $8/pool average fare and Uber's 25% take rate, that's $39,600/day incremental revenue from day one.\n\n**PM principle:** When building internal product sizing models, always prefer behavioral data over survey data, and always prefer internal data over industry data. Your users' behavior is the best predictor of your product's uptake.\n\n**What Jonathan Golden later said:** The 18% number was the exact insight that gave Travis confidence to fast-track UberPool development.`
+      },
+      {
+        id:'C', points:4,
+        label:'Method C — The $180B global urban transit market is the true TAM, and even 5% share is a massive opportunity.',
+        reason:'Ambition is right but too disconnected from near-term product reality',
+        feedback:`**Mohan Simham's Comments — Partial Answer (4/10)**\n\nThe "transit market substitution" thesis is strategically sound in the long run — Uber did position UberPool as a complement/substitute to public transit in several cities, and worked with transit authorities on last-mile solutions. But as an opportunity sizing input for a 30-day product decision, it creates more problems than it solves.\n\n**The issue:** A top-down TAM of $180B tells Travis almost nothing about how fast UberPool will grow in San Francisco next month. The gap between "5% of transit riders could switch" and "how many will switch this year in the cities where we operate" is enormous and requires assumptions that aren't validated.\n\n**The right use of this framing:** Top-down TAM (like the transit market) is useful for long-term investment decisions and fundraising narratives. It answers "is there a large enough market ceiling to justify building infrastructure?" not "how big will this be in 12 months?"\n\n**The PM lesson:** Match your sizing methodology to the decision you're making. A 30-day launch decision needs bottom-up behavioral evidence. A 5-year investment roadmap benefits from top-down market framing.`
+      },
+      {
+        id:'D', points:7,
+        label:'Method D — Lyft Line reached 25% of rides in 3 weeks. Apply that adoption rate to Uber\'s larger base to project Year 1 pool demand.',
+        reason:'Competitive proxy is directionally useful and defensible with management',
+        feedback:`**Mohan Simham's Comments — Good Answer (7/10)**\n\nCompetitive proxy sizing is highly effective when you have a direct analog — and Lyft Line is about as direct as it gets. Same city, same user behavior, same pricing structure. If Lyft achieves X% adoption, Uber should be able to model from that baseline.\n\n**What makes it compelling:** It's fast, credible, and easy to explain to executives. "Lyft's equivalent product is already at 25% of their rides. If we achieve even half that rate with our 5× rider base…" is a complete argument.\n\n**The two risks:**\n1. **Network density advantage:** Uber had more riders per city than Lyft in August 2014, meaning UberPool's matching probability was actually higher — the 25% might underestimate Uber's potential.\n2. **Behavioral differences:** Lyft's brand was "friend with a car," which attracted riders more comfortable with sharing. Uber's premium heritage might have lower initial conversion among its more formal user base.\n\n**The optimal move:** Combine Methods B and D. Internal behavioral data (18% natural candidates) + competitive proxy (Lyft Line at 25%) + brief pilot (one neighborhood for 2 weeks) = a defensible, multi-source sizing model that Travis can take to the board.`
+      }
+    ]
+  },
+  {
+    id:6,
+    framework:'5 Whys / Root Cause Analysis',
+    date:'Q2 2015',
+    title:'The Driver Churn Crisis',
+    scenario:`**San Francisco, Q2 2015.** Uber's operations team delivers alarming news: **driver churn rate has hit 40% monthly** in major US markets. In English: for every 10 drivers active in January, only 6 remain active by February. This means Uber must continuously acquire new drivers just to maintain supply, at a cost of $500–800 per driver in recruiting and onboarding.
+
+VP Operations **Ryan Graves** presents the headline number to Travis. Travis's first response: "Double the driver bonuses." Ryan hesitates.
+
+"Travis, we've tried three rounds of bonus increases in the past 18 months. Each one produces a 3-week improvement, then churn returns to the same level. We're spending $1.4B annually on driver incentives. If we don't find the root cause, we're just bleeding money."
+
+Travis slows down. "Okay. What's actually happening?"
+
+The product analytics team has assembled a churn survey of 2,000 former drivers. The top answers:
+1. "Earnings were unpredictable" (38%)  
+2. "No support when there was a problem" (27%)
+3. "Deactivated without explanation" (19%)
+4. "Car expenses exceeded earnings" (16%)
+
+Ryan recommends applying the 5 Whys framework to the top response before jumping to solutions.`,
+    question:'Applying the 5 Whys framework to "Earnings were unpredictable," which root cause correctly leads to a durable solution?',
+    answers:[
+      {
+        id:'A', points:4,
+        label:'Why 1: Earnings unpredictable → Why 2: Surge pricing varies → Fix: Give drivers surge forecasts so they can plan their shifts.',
+        reason:'Addresses a symptom (surge visibility) not the root cause',
+        feedback:`**Mohan Simham's Comments — Partial Answer (4/10)**\n\nSurge forecasting is a reasonable feature and Uber did eventually build it. But the 5 Whys framework asks you to keep asking — stopping at 2 "Whys" almost always leaves you at a symptom, not a root cause.\n\n**Let's continue the chain:** Why is surge pricing unpredictable? Because driver can't know when high-demand events will occur. But why can't they know? Because Uber's demand prediction data wasn't shared with drivers. But why wasn't it shared? Because Uber optimized for aggregate efficiency (put the right cars in the right places) rather than individual driver income predictability.\n\n**The real insight:** Uber designed a system optimized for the marketplace, not for the driver as a micro-business owner. Surge forecasting is a feature that partially addresses this — but the deeper root cause is that Uber's product philosophy treated drivers as supply units, not as independent earners who needed planning tools.\n\n**What the durable solution looked like:** "Pro Tips" features, heat maps, earnings guarantees, and eventually Uber's "Guaranteed Earnings" program — all emerged from properly diagnosing the root cause as "drivers can't run their driving as a planned business."`,
+      },
+      {
+        id:'B', points:7,
+        label:'Why 1: Earnings unpredictable → Why 2: Hours worked ≠ earnings → Why 3: No minimum earnings guarantee → Fix: Launch weekly earnings guarantees for active drivers.',
+        reason:'Three levels deep — reaches a structural problem with a concrete solution',
+        feedback:`**Mohan Simham's Comments — Good Answer (7/10)**\n\nThree levels of Why gets much closer to a root cause and immediately suggests a concrete solution: guaranteed minimums. Uber did launch "earnings guarantees" — "Drive X hours, earn at least $Y" — which produced measurable churn reduction.\n\n**Why it's good but not optimal:** The earnings guarantee program addressed one aspect of unpredictability but created a new problem: drivers who hit their guarantee early would log off, creating supply shortages at key moments. The guarantee solved the income planning problem but not the "micro-business owner" psychology problem.\n\n**The deeper 5 Whys path:** Continues to ask: "Why can't drivers plan their earnings?" → "Because they lack real-time visibility into demand, surge zones, and hour-by-hour earnings projections." → "Because Uber's driver app was designed around accepting individual rides, not running a business."\n\n**The root cause is a product design philosophy problem**, not just a pricing model problem. Earnings guarantees are a business model patch on a product design flaw.\n\n**PM principle:** 5 Whys are complete when the next "Why?" reveals something you actually have the power to change at a structural level.`
+      },
+      {
+        id:'C', points:10,
+        label:'Why 1: Earnings unpredictable → Why 2: Hours ≠ income → Why 3: No earnings tools → Why 4: Uber app designed for riders not drivers → Why 5: Drivers treated as supply, not micro-business owners → Fix: Rebuild the driver app around earnings planning and transparency.',
+        reason:'Full 5 Whys chain — reaches the root product design philosophy issue',
+        feedback:`**Mohan Simham's Comments — Optimal Answer (10/10)**\n\nThis is the complete 5 Whys analysis and it reveals the actual root cause: **Uber designed a product for riders and treated drivers as a logistical input, not as customers with their own needs.**\n\n**The 5 Whys chain:**\n1. Earnings unpredictable\n2. Hours don't predict income reliably\n3. No tools to model or plan earnings\n4. Driver app built around ride-acceptance, not business management\n5. Uber's product philosophy defined "customer" as rider, not driver\n\n**Root cause:** Product philosophy mismatch between Uber's two-sided marketplace and its customer-centered design.\n\n**The durable solution:** A complete driver experience redesign — which Uber launched in 2018 as "Uber Pro" and "Driver Destination" features, with real-time earnings projections, daily summaries, and ratings transparency. This produced a sustained churn reduction of ~30% in pilot markets.\n\n**Real-world validation:** Lyft's driver app included earnings planning tools from launch and consistently had lower driver churn than Uber — a direct consequence of starting with a different problem definition.\n\n**The 5 Whys principle:** You've reached the root cause when (a) the fix requires a structural change, not a feature patch, and (b) fixing it would address multiple symptoms simultaneously.`
+      },
+      {
+        id:'D', points:2,
+        label:'The root cause is straightforward — drivers leave because competitors pay more. Fix: Match competitor rates.',
+        reason:'Price-matching skips the diagnostic process entirely',
+        feedback:`**Mohan Simham's Comments — Poor Answer (2/10)**\n\nThis answer doesn't apply the 5 Whys at all — it jumps directly from the symptom to a solution based on an assumption (competitors pay more) that the data doesn't support.\n\n**What the survey actually said:** The #1 answer was "unpredictable earnings" — not "insufficient earnings." 38% of churned drivers said they left because they couldn't plan their income, not because the dollar amount was too low. Matching competitor rates would not address the predictability problem.\n\n**Uber's actual experience with rate-matching:** Between 2013–2016, Uber raised driver incentives three separate times during competitive pressure from Lyft and Sidecar. Each intervention produced 2–4 weeks of reduced churn, then returned to baseline. The problem wasn't the rate — it was the experience of not being able to plan around it.\n\n**The 5 Whys principle:** "Ask Why 5 times to resist the pull toward obvious solutions." The most expensive PM mistake is treating symptoms as root causes — it results in repeated spending on the same problem with diminishing returns.\n\n**The cost of this error at scale:** Uber's $1.4B annual driver incentives (2015) were largely being spent on a symptom. Fixing the root cause (driver app redesign) cost a fraction of that.`
+      }
+    ]
+  },
+  {
+    id:7,
+    framework:'Problem Space vs. Solution Space',
+    date:'July–August 2016',
+    title:'China — Is This a Problem Worth Solving?',
+    scenario:`**San Francisco, July 2016.** Uber China is burning $1 billion per year in subsidies to compete with **Didi Chuxing** in the world's largest ride-hailing market. Uber's China market share: 30%. Didi's: 70%. For every dollar Uber spends in China, Didi spends three — backed by Alibaba, Tencent, and Apple (which invested $1B in Didi in May 2016).
+
+Travis holds a 4-hour strategy session with the board. The problem statement on the whiteboard: **"How do we win in China?"**
+
+CFO **Gautam Gupta** challenges the framing: "Travis, that's already in the solution space. You've assumed winning means continued fight. What's the problem we're actually trying to solve?"
+
+Travis: "Global market leadership."
+Gautam: "That's an outcome, not a problem. The problem is: we're burning $1B/year on a fight we may never win. Let's be precise."
+
+The team identifies two possible problem definitions:
+
+**Problem A (Solution Space):** "How do we gain market share in China against Didi?"
+
+**Problem B (Problem Space):** "How do we capture the value of the Chinese market opportunity in a way that's capital-efficient and sustainable?"
+
+Under Problem B, entirely different solutions emerge that aren't visible under Problem A.`,
+    question:'Which framing of the China problem leads to the most strategically sound decision, and what solution does it unlock?',
+    answers:[
+      {
+        id:'A', points:2,
+        label:'Problem A — "How do we gain market share against Didi?" → Double down: raise $2B for China specifically and out-subsidize Didi.',
+        reason:'Stays in solution space — doubles down on a losing cost structure',
+        feedback:`**Mohan Simham's Comments — Poor Answer (2/10)**\n\nThis is the "sunk cost" trap amplified by solution-space thinking. "How do we gain market share against Didi?" is already a solution-constrained question — it assumes the answer is "compete harder." But Didi's cost structure advantage (backed by Alibaba + Tencent + Apple's $1B investment) was structural, not a matter of insufficient Uber capital.\n\n**The problem-space error:** When you define the problem as "how to win a fight," you've already constrained yourself to fight or surrender. You've eliminated the possibility of reframing the value capture entirely.\n\n**What doubling down would have meant:** By 2016, Uber was already burning $1B/year in China. To reach parity with Didi's subsidy war chest would have required $3–5B in committed capital. Even then, Didi's local network effects, regulatory relationships, and cultural familiarity gave it compounding structural advantages.\n\n**The PM principle:** When a solution (continued competition) is consuming resources without generating results, the right response is not more resources — it's a problem reframe. Ask "are we solving the right problem?" before asking "how do we solve this problem better?"`,
+      },
+      {
+        id:'B', points:10,
+        label:'Problem B — "How do we capture Chinese market value in a capital-efficient way?" → Sell Uber China to Didi in exchange for 17.7% equity stake.',
+        reason:'Problem reframe unlocks a solution space that is invisible from Problem A framing',
+        feedback:`**Mohan Simham's Comments — Optimal Answer (10/10)**\n\nThis is the Problem Space vs. Solution Space framework at its most powerful. By shifting from "how do we win in China?" (solution space) to "how do we capture Chinese market value efficiently?" (problem space), the entire solution landscape changes.\n\n**Solutions visible under Problem B that are invisible under Problem A:**\n1. **Sell Uber China to Didi** in exchange for equity → Uber receives 17.7% of Didi + $1B cash\n2. Strategic partnership with Didi while maintaining global position\n3. Refocus China capital on Southeast Asia (where Grab was weaker in 2016)\n4. Technology licensing — monetize Uber's algorithm and platform without operating costs\n\n**What actually happened:** Uber sold its China operations to Didi in August 2016. Uber's 17.7% equity stake in Didi was worth approximately **$7 billion** at the time and **$40+ billion** by 2021 at Didi's peak valuation. The capital Uber no longer burned in China was redirected to self-driving (ATG) and international expansion.\n\n**The meta-lesson:** Uber tried to "win China" and instead captured significantly more value by redefining the problem. Problem Space thinking converts losses into strategic retreats with asymmetric returns.\n\n**Travis's own reflection:** He said the China exit "was one of the best things we ever did." It was only possible because a CFO forced a problem reframe.`
+      },
+      {
+        id:'C', points:6,
+        label:'Problem B — "How do we capture value from China efficiently?" → License Uber\'s technology to Didi rather than operating directly.',
+        reason:'Problem reframe is correct, solution is valid but suboptimal vs. equity stake',
+        feedback:`**Mohan Simham's Comments — Good Answer (6/10)**\n\nThe problem reframe is exactly right — you're in the problem space, not the solution space. Technology licensing is a legitimate solution within that framing: Uber's algorithms (dynamic pricing, demand forecasting, driver matching) were genuinely valuable and Didi was using similar but less advanced approaches in 2016.\n\n**Why licensing scores lower than equity:** Technology licensing provides predictable but capped revenue (typically 2–5% of revenue). An equity stake provides uncapped upside if Didi grows. By 2021, Didi's IPO valued the company at $67B — Uber's 17.7% stake was worth ~$12B. No licensing deal in 2016 could have generated that return.\n\n**When licensing would be the right answer:** If Uber believed Didi would stagnate or the China ride-hailing market would plateau, licensing is less risky than equity. The equity bet requires confidence that Didi will grow substantially — which the team clearly had.\n\n**The PM principle:** Problem B thinking generates a solution menu. Choosing between equity and licensing requires one more analytical step — quantifying expected value under different scenarios. This is where financial modeling (NPV/EV analysis) extends the problem definition work.`
+      },
+      {
+        id:'D', points:4,
+        label:'Problem A — "How do we gain share against Didi?" → Pivot to lower-tier Chinese cities where Didi is weaker.',
+        reason:'Problem A framing with a more creative solution, but still in the wrong problem space',
+        feedback:`**Mohan Simham's Comments — Partial Answer (4/10)**\n\nTier-3 and Tier-4 city expansion is a real strategic option and was actually considered — smaller cities had lower taxi-hailing penetration and less Didi infrastructure. Some analysts argued this was the sustainable China path.\n\n**Why it still scores below the reframe:** This answer is still anchored in "how do we compete in China" — it's still solution-space thinking, just more creative. It assumes the problem is geographic coverage, not capital efficiency.\n\n**The practical flaw:** Tier-3 and Tier-4 Chinese cities have significantly lower average ride fares (less affluent, shorter trips) and require building local driver supply networks from scratch. The unit economics deteriorate compared to Tier-1 cities, while the capital requirement remains high.\n\n**The deeper issue:** Without the problem reframe, Uber would still be burning $800M+ per year just in lower-tier cities, with no path to profitability. The geographic pivot doesn't solve the structural capital problem.\n\n**Lesson:** Creative solutions in the wrong problem space are still the wrong solutions. The geographic pivot is interesting only if the problem is "how do we find a winnable market in China" — a subtly different question that still might have led to the same exit conclusion.`
+      }
+    ]
+  },
+  {
+    id:8,
+    framework:'Working Backwards (Amazon PR/FAQ Method)',
+    date:'September 2017',
+    title:'New CEO — Defining the Right Problem First',
+    scenario:`**San Francisco, September 2017.** Dara Khosrowshahi has been CEO for three weeks, arriving from Expedia. What he inherited: **a sexual harassment crisis**, a DOJ criminal investigation, the Waymo IP lawsuit (potential $2.6B judgment), Travis Kalanick's departure, and seven senior executives gone in 14 months.
+
+The board meeting agenda item: "What's our #1 priority for the next 90 days?"
+
+Dara opens with a question: "Before we answer that, what problem are we trying to solve? There are four candidates:"
+
+**Problem 1 (Legal):** "Uber faces existential legal risks — the Waymo lawsuit, criminal investigation, and regulatory bans in multiple countries."
+
+**Problem 2 (Culture):** "Uber's internal culture created the conditions for systematic harassment and ethical violations — it will repeat without structural change."
+
+**Problem 3 (Business):** "Lyft is gaining share fast. Uber's US market share dropped from 84% to 75% during the crisis. The competitive window is closing."
+
+**Problem 4 (Trust):** "Uber's brand trust among riders, drivers, cities, and partners is at historic lows. This underlies all other problems."
+
+Dara had used Amazon's **Working Backwards (PR/FAQ)** method at Expedia. This method asks: write the ideal press release announcing you solved the problem — then work backwards to define what "solved" actually means.`,
+    question:'Using the Working Backwards framework, which problem definition should Dara make his #1 priority?',
+    answers:[
+      {
+        id:'A', points:6,
+        label:'Problem 1 (Legal) — Resolve the Waymo lawsuit and DOJ investigation first; legal uncertainty is blocking every other strategic decision.',
+        reason:'Legal threats are real and time-sensitive, but treating symptoms of deeper problems',
+        feedback:`**Mohan Simham's Comments — Good Answer (6/10)**\n\nLegal priority is defensible — the Waymo lawsuit (eventually settled for $245M in Uber equity + technology agreements in 2018) and the DOJ criminal investigation were genuinely existential risks. Unresolved legal liability makes fundraising, IPO planning, and partner negotiations nearly impossible.\n\n**The Working Backwards test:** Write the ideal press release. "Uber Settles Waymo Lawsuit, DOJ Investigation Concludes" — does this solve the problem? Partially. Legal resolution reduces liability but doesn't restore driver trust, city relationships, or prevent future ethical violations.\n\n**Why it scores 6, not higher:** Legal problems are symptoms of the culture problem, not root causes. If you resolve the lawsuits without fixing the culture that created them, new legal problems will emerge. Dara himself said in his 2017 town hall: "The culture that allowed these things to happen is still here. Winning the Waymo lawsuit doesn't change that."\n\n**The sequencing insight:** Legal resolution is urgent and should be worked in parallel — but making it the #1 priority frames the new CEO's mandate as "damage control" rather than "transformation," which signals more of the same to employees, regulators, and riders.`
+      },
+      {
+        id:'B', points:4,
+        label:'Problem 3 (Business) — Lyft is gaining share; Uber\'s competitive moat is eroding while leadership focuses on internal issues.',
+        reason:'Business metrics matter but trying to win market share before fixing trust is a losing strategy',
+        feedback:`**Mohan Simham's Comments — Partial Answer (4/10)**\n\nThe competitive urgency is real. Lyft's US market share grew from ~16% to 25% during Uber's 2017 crisis. Every month of distraction cost Uber riders, drivers, and revenue. A business-first framing is operationally pragmatic.\n\n**The Working Backwards failure:** Write the press release: "Uber Regains Market Share, Outperforms Lyft in Q4 2017." Does that signal a solved problem? No — it signals a company that prioritized market share over the ethical and organizational issues that caused the crisis. Regulators, cities, and the press would read it as "Uber swept its problems under the rug."\n\n**The sequencing error:** Uber's market share loss was a consequence of lost trust, not an independent variable. Drivers choosing Lyft were making a values statement. Riders deleting Uber (#deleteUber had 200,000 app deletions in one weekend in February 2017) were making a values statement. You cannot recapture market share with marketing; you have to rebuild the reason drivers and riders should return.\n\n**What Dara understood:** "Uber can't win market share if Uber isn't a company people want to work for, drive for, or ride with." Business metrics would recover as a lagging indicator of trust recovery.`
+      },
+      {
+        id:'C', points:10,
+        label:'Problem 4 (Trust) — Brand trust is the foundation of a two-sided marketplace; all other problems (legal, competitive, cultural) are symptoms of trust erosion.',
+        reason:'Trust is the root node — the Working Backwards press release here defines what "solved" truly means',
+        feedback:`**Mohan Simham's Comments — Optimal Answer (10/10)**\n\nDara Khosrowshahi identified exactly this in his first board presentation. He used a variant of the Working Backwards method to frame his mandate: **"In 3 years, what headline do we want written about Uber?"**\n\nHis answer: **"Uber is now the most trusted transportation brand in the world."**\n\n**Working Backwards from that press release:**\n• To be the most trusted brand → drivers must trust Uber with their livelihoods\n• To earn driver trust → resolve deactivations, transparent support, fair earnings\n• To be trusted by cities → drop the regulatory "ask forgiveness not permission" strategy\n• To be trusted by riders → improve safety infrastructure, be transparent about incidents\n• To be trusted by employees → fix culture, establish ethical leadership, clear values\n\n**Every other problem flows from this definition.** The legal crisis is a trust problem (Uber violated partner trust with Waymo). The culture crisis is a trust problem. The competitive erosion is a trust problem.\n\n**What actually happened:** Dara's "180 Days of Change" program focused explicitly on trust: 180 specific commitments to riders and drivers. Market share stabilized within 6 months and began recovering. The IPO in 2019 — controversial but completed — validated the trust-first strategy.\n\n**Working Backwards principle:** The right "press release" to solve defines the root problem, not a symptom. Trust is the platform on which all Uber's other businesses run.`
+      },
+      {
+        id:'D', points:7,
+        label:'Problem 2 (Culture) — The culture that enabled harassment is structural; it will produce new crises unless fundamentally changed.',
+        reason:'Culture is the right root cause but slightly narrower than the trust framing',
+        feedback:`**Mohan Simham's Comments — Good Answer (7/10)**\n\nCulture-first is a strong answer and Dara did prioritize cultural transformation — hiring chief people officer Liane Hornsey, publishing Uber's cultural norms ("We do the right thing. Period."), and conducting a board-commissioned investigation resulting in 215 recommendations, 100+ of which were implemented.\n\n**Why trust > culture as the problem definition:** Culture is internal; trust is external. Uber's crisis wasn't only about what was happening inside the company — it was about the relationship between Uber and its external stakeholders: drivers who felt cheated by policy changes, cities that felt manipulated by Greyball, riders who felt unsafe.\n\n**The Working Backwards test:** "Uber has fixed its culture" is a press release that reassures employees and some governance watchers. "Uber is now the most trusted transportation brand" is a press release that reassures riders, drivers, cities, regulators, and employees simultaneously.\n\n**The relationship:** Culture change is the mechanism to achieve trust recovery, not the outcome itself. Framing the problem as culture means you'll know you've solved it when internal surveys improve. Framing it as trust means you've solved it when external stakeholders change their behavior — more drivers choosing Uber, more cities welcoming expansion, more riders returning.\n\n**The broader lesson:** The right problem definition is the one whose solution changes the most important external reality, not just internal metrics.`
+      }
+    ]
+  },
+  {
+    id:9,
+    framework:'Opportunity Sizing — Adjacent Market Expansion',
+    date:'April 2019',
+    title:'Uber Eats vs. Mobility — Sizing the Bet',
+    scenario:`**New York City, April 2019.** It's 3 weeks before Uber's IPO. The S-1 filing reveals: **Uber lost $1.8 billion in 2018.** Analysts are dissecting the business. A key debate in the investor roadshow: Is Uber Eats a real business or a distraction?
+
+CFO **Nelson Chai** presents the numbers:
+- Uber Rides (Mobility): $9.2B gross bookings in 2018, growing 33% YoY
+- Uber Eats: $1.5B gross bookings in 2018, growing 150% YoY — but losing money per delivery
+
+The question from Deutsche Bank: **"If Uber Eats keeps growing at 150% but never makes money, is it creating or destroying value?"**
+
+Product Strategy lead **Manik Gupta** needs to size the long-term Uber Eats opportunity to answer whether the losses are investments or waste. He has four approaches:
+
+**Approach A:** Restaurant delivery market: $35B US annually → Uber Eats could own 15% = $5.25B gross bookings
+
+**Approach B:** Retail food spend: $800B US annually → Even 1% captured = $8B gross bookings
+
+**Approach C:** DoorDash/Grubhub benchmark: Grubhub doing $1.1B revenue at 31% margin → If Uber Eats reaches similar scale, project a $3.5B revenue business by 2023
+
+**Approach D:** Unit economics modeling: Current delivery loss is $8/order. At what volume does it reach breakeven? How many cities needed?`,
+    question:'Which opportunity sizing approach most credibly answers whether Uber\'s Eats losses are strategic investments or structural waste?',
+    answers:[
+      {
+        id:'A', points:4,
+        label:'Approach A — The $35B US restaurant delivery market is well-measured; 15% share = $5.25B, justifying current investment.',
+        reason:'Defensible and concrete but anchored to current market behavior only',
+        feedback:`**Mohan Simham's Comments — Partial Answer (4/10)**\n\nTop-down market sizing from a well-researched TAM is a clean investor communication tool. The $35B restaurant delivery market was a known figure (NPD Group data) and 15% market share is a reasonable target given Uber's brand and logistics infrastructure.\n\n**The limitation:** This framing only counts existing restaurant delivery spending. It doesn't account for:\n1. **Occasion expansion:** Uber Eats making food delivery accessible to people who previously didn't order delivery (non-consumption)\n2. **Category expansion:** Grocery delivery, alcohol delivery, pharmacy — all adjacent categories Uber Eats eventually entered\n3. **International:** The $35B is US-only; Uber Eats ultimately became dominant in many international markets\n\n**For the specific investor question** ("are losses investments or waste?"), this approach doesn't answer the question. It tells you the market is big enough to matter, but not whether unit economics will ever be positive.\n\n**The right use of Approach A:** Use it to establish market ceiling (sufficient to justify investment). Then layer in Approach D (unit economics) to answer the "investment vs. waste" question.`
+      },
+      {
+        id:'B', points:3,
+        label:'Approach B — 1% of $800B US food retail = $8B gross bookings; Uber Eats is really addressing total food spend, not just restaurant delivery.',
+        reason:'Overly ambitious framing disconnected from near-term product reality',
+        feedback:`**Mohan Simham's Comments — Partial Answer (3/10)**\n\nIn the long-run strategic sense, this is actually correct — Uber Eats has expanded into grocery (Cornershop acquisition, 2021), alcohol, and convenience delivery. The $800B food retail TAM is the right ceiling for a platform play.\n\n**Why it fails in the IPO context:** A slide showing "1% of $800B" during an IPO roadshow will be received with skepticism. Analysts will ask: "What evidence do you have that Uber Eats can expand into grocery without massive incremental investment?" In April 2019, Uber Eats was still primarily restaurant delivery. Expanding the TAM without a proven product roadmap looks like TAM inflation.\n\n**The investor credibility problem:** During an IPO, you're measured on what you can deliver in 3–5 years, not the theoretical ceiling. An $800B addressable market claim for a product doing $1.5B gross bookings requires a much longer explanation than a roadshow allows.\n\n**When $800B becomes credible:** After Uber launches grocery delivery with a working unit economics model (which happened with Cornershop in 2021), the expanded TAM becomes defensible. Pre-launch, it's aspirational, not analytical.`
+      },
+      {
+        id:'C', points:7,
+        label:'Approach C — Benchmark Grubhub\'s financials: if Uber Eats reaches similar scale, project $3.5B revenue business by 2023.',
+        reason:'Competitive benchmarking gives Wall Street a relatable reference point',
+        feedback:`**Mohan Simham's Comments — Good Answer (7/10)**\n\nComparable company analysis (comps) is the dominant methodology in investment banking for exactly this reason: it gives investors a reference framework using businesses they already understand and have models for.\n\n**The compelling argument:** "Grubhub at $1.1B revenue is valued at $6.2B (5.6× revenue). If Uber Eats reaches $3.5B revenue at similar margin structure, it's worth $20B as a standalone business — more than offsetting current losses."\n\n**Why it scores 7, not higher:** The comp has a hidden assumption problem. Grubhub reached profitability as a marketplace-only player (no delivery assets). Uber Eats included delivery labor costs (Uber couriers), which is a fundamentally different cost structure. Applying Grubhub's margin profile to a logistics-heavy business overstates the achievable margin.\n\n**The DoorDash comparison is better:** DoorDash had the hybrid logistics + marketplace model, and its unit economics (also negative in 2019) more closely resembled Uber Eats. But DoorDash was private in April 2019 — no public financials to benchmark.\n\n**Combined approach:** Use Grubhub as the market penetration benchmark (how big can this be?) and unit economics modeling to answer the profitability question.`
+      },
+      {
+        id:'D', points:10,
+        label:'Approach D — Model unit economics: at what order volume and city count does each delivery reach breakeven? This answers whether losses are structural or investment.',
+        reason:'Only approach that directly answers the investor\'s actual question',
+        feedback:`**Mohan Simham's Comments — Optimal Answer (10/10)**\n\nThe Deutsche Bank analyst asked: "Is Uber Eats creating or destroying value?" That's a unit economics question, not a market sizing question. The only way to answer it is to model the path from current loss ($8/order) to positive contribution margin.\n\n**The Unit Economics Model:**\n• Current: Revenue/order = $3.50 (take rate on $25 order). Cost/order = $11.50 (courier pay + support + insurance). **Loss: $8.00/order**\n• Scale lever 1: More orders per courier hour → cuts per-order cost\n• Scale lever 2: Advertising revenue from restaurants → increases revenue/order\n• Scale lever 3: Subscription (Uber One) → reduces delivery fee, increases volume, improves LTV\n\n**What Manik's team modeled:** At 10M daily orders globally (vs. 1.5M in April 2019), unit economics turn positive at $1.20 contribution margin per order. That volume was achievable in 3 years.\n\n**What actually happened:** Uber Eats reached breakeven on a contribution-margin basis in Q4 2020, during COVID when volume surged 450%. By 2023, Delivery segment had positive adjusted EBITDA — exactly as the unit economics model predicted.\n\n**PM principle:** For any investment question ("are these losses justified?"), unit economics modeling is the only methodology that gives a direct answer. Market sizing tells you if the opportunity is large enough; unit economics tells you if you can make money in it.`
+      }
+    ]
+  },
+  {
+    id:10,
+    framework:'Problem Definition in Crisis — Reframing Under Pressure',
+    date:'March–April 2020',
+    title:'COVID-19: When the Problem Completely Changes',
+    scenario:`**San Francisco, March 23, 2020.** California issues the world's first major shelter-in-place order. Uber's data team sends a Slack message to Dara at 6:47 AM: "Rides down 80% overnight. Eats up 450%."
+
+Within 72 hours, Uber's core business loses $4 billion in projected annual revenue. Simultaneously, Uber Eats is overwhelmed — app crashes, restaurants calling support lines, courier supply insufficient for demand surge.
+
+Dara's 8 AM executive team call:
+**CFO Nelson:** "We need to cut 14% of the workforce immediately."
+**VP Rides:** "We should discount aggressively to maintain driver relationships."
+**VP Eats:** "We literally can't handle the Eats volume. Our courier app is crashing."
+**Head of Safety:** "Drivers are scared. We don't have PPE guidance for couriers."
+
+A McKinsey consultant on retainer says: "Dara, you have a resource allocation problem. You need to define the new problem before you can allocate."
+
+Four possible problem definitions for the next 90 days:
+
+**P1:** "How do we preserve Uber Rides by supporting drivers and subsidizing rides until lockdowns end?"
+**P2:** "How do we scale Uber Eats infrastructure to handle 5× volume surge with no margin loss?"  
+**P3:** "How do we ensure Uber survives COVID-19 as a business while positioning for post-COVID recovery?"
+**P4:** "How do we keep drivers and couriers economically whole during a crisis they didn't cause?"`,
+    question:'Which problem definition best positions Uber to make correct trade-off decisions across all 90-day COVID choices?',
+    answers:[
+      {
+        id:'A', points:5,
+        label:'P1 — Preserve Uber Rides through driver support and price subsidies; rides will recover when lockdowns lift.',
+        reason:'Defensible preservation strategy but bets on timeline no one can predict',
+        feedback:`**Mohan Simham's Comments — Partial Answer (5/10)**\n\nDriver preservation was genuinely important — Uber's supply network is the hardest asset to rebuild. Drivers who leave permanently during COVID cannot be instantly recalled when demand returns. Some form of driver support was necessary.\n\n**The fatal assumption:** This problem definition bets that lockdowns would end within a predictable timeframe. In March 2020, no one knew if restrictions would last 6 weeks or 18 months. A problem definition that depends on external resolution of an unknown variable is inherently fragile.\n\n**The resource allocation error:** If Rides is the #1 priority, Uber might underfund Eats at exactly the moment when Eats was the company's only growing revenue line. Subsidizing a shrinking business while starving a surging business inverts the correct capital allocation.\n\n**What ride-first companies did:** Lyft, which had no food delivery business, was forced into exactly this position. Lyft cut 17% of its workforce in April 2020 and had no growth engine to offset the rides decline. Uber's diversified business was its advantage — but only if the problem definition used that advantage.\n\n**The PM lesson:** Problem definitions during crises must account for things you can't control (pandemic duration). The best problem definitions are robust under multiple external scenarios, not dependent on a specific one.`
+      },
+      {
+        id:'B', points:6,
+        label:'P2 — Scale Eats infrastructure immediately; this is a once-in-a-decade demand surge and the winner in delivery will be whoever handles it best.',
+        reason:'Correct identification of the growth engine but ignores driver/courier welfare',
+        feedback:`**Mohan Simham's Comments — Good Answer (6/10)**\n\nEats-first was a legitimate strategic choice and some analysts argued Uber should have gone even harder in this direction. DoorDash's decision to invest heavily in infrastructure during COVID (warehousing, grocery partnerships) locked in dominant market share that it maintained through 2024.\n\n**What the Eats-only problem definition gets right:** The demand signal was unmistakable. Eats +450% in a week was not a temporary blip — it was a structural behavioral shift (people ordering food at home) that accelerated a trend already underway. Companies that won the COVID delivery surge kept the customers.\n\n**What it gets wrong:** "Scale Eats" without a financial survival sub-problem ignores that Uber needed liquidity to survive 12–18 months of reduced total revenue. In March 2020, Uber had ~$9B in unrestricted cash. A pure Eats scaling bet required aggressive spending without a clear profitability timeline.\n\n**The missing element:** Courier safety and welfare. The #1 constraint on Eats scaling in April 2020 wasn't technology — it was couriers who were afraid to work without PPE guidance, mask availability, and COVID protection protocols. P2 ignores the human constraint entirely.\n\n**Upgrade:** Add "while ensuring courier safety" and "within a financial sustainability constraint" to make this problem definition complete.`
+      },
+      {
+        id:'C', points:10,
+        label:'P3 — "How do we ensure Uber survives COVID while positioning for post-COVID recovery?" — This meta-problem enables correct allocation across all trade-offs.',
+        reason:'Survival + positioning is a complete problem definition that generates all necessary sub-problems',
+        feedback:`**Mohan Simham's Comments — Optimal Answer (10/10)**\n\nThis is the correct problem definition because it creates a decision framework that is robust to all external scenarios — long lockdown, short lockdown, partial opening, recurring waves.\n\n**Why P3 generates better decisions:**\n• Workforce cuts: Yes, but minimize damage to high-value capabilities (Eats tech, Safety team) → leads to cutting Rides support over product teams\n• Driver support: Yes, but time-limited and tied to expected lockdown duration → Financial Assistance Program (Uber offered $50M driver fund)\n• Eats investment: Yes, but only at the scale financial survival allows → Expanded Eats to 20 new markets but didn't overbuild delivery infrastructure\n• Post-COVID positioning: Invested in autonomous delivery, grocery, and loyalty (Uber One precursor) while competitors went into preservation mode\n\n**What Dara actually said:** His April 7, 2020 memo to employees included exactly this framing: "Our goal is to come out of this crisis as a stronger company than we entered it."\n\n**The layoff decision under P3:** Cutting 3,700 employees (14%) while retaining engineering, product, and Eats operations was a P3 decision — not pure cost-cutting, and not pure growth investment. It preserved survival while protecting the growth assets.\n\n**What actually happened:** Uber emerged from COVID with Eats as a full peer to Rides, better brand trust (driver support programs), and more financial discipline. The problem definition predicted the correct trade-offs.`
+      },
+      {
+        id:'D', points:7,
+        label:'P4 — "How do we keep drivers and couriers economically whole?" — A people-first problem definition builds long-term supply network trust.',
+        reason:'Ethically strong and strategically important, but incomplete as the primary organizational problem',
+        feedback:`**Mohan Simham's Comments — Good Answer (7/10)**\n\nDriver and courier welfare was a critical problem and Uber's handling of it had lasting brand consequences. Uber's initial announcement of 3,700 layoffs (via Zoom, which leaked to the press before employees were notified) and later reports of inadequate driver COVID support created significant brand damage.\n\n**What P4 gets right:** Supply network preservation is strategic, not just ethical. If drivers leave permanently during COVID, Uber cannot service the post-COVID rides surge. The platform's value is the liquidity of the matching network — destroy the supply side and the marketplace never recovers.\n\n**What P4 misses:** At $9B in cash with $1.8B annual losses before COVID, Uber's financial survival was genuinely uncertain. Making driver welfare the #1 problem without a financial viability constraint could have led to spending that made the company insolvent.\n\n**The sequencing answer:** P4 is a necessary component of P3, not an alternative to it. A correct COVID problem definition is:\n1. Ensure financial survival (P3 core)\n2. Within that constraint, maximize driver/courier support (P4)\n3. Invest in the growth engine (P2)\n\n**The PM meta-lesson:** In a multi-stakeholder crisis, the problem definition must acknowledge trade-offs between stakeholder needs. P4 alone optimizes for one stakeholder; P3 defines the constraint system that makes prioritization possible.`
+      }
+    ]
+  }
+];
+
+/* ─────────────────────────────────────────────
+   SCORING HELPERS
+───────────────────────────────────────────── */
+const getTier = (score) => {
+  if(score >= 90) return { label:'Strategic Mastery', color:'#1e40af', bg:'#dbeafe', desc:'You think like a senior PM. Your problem framing is precise, your market sizing is disciplined, and you know the difference between the problem space and the solution space. The frameworks aren\'t tools you applied — they\'re lenses you think through.' };
+  if(score >= 75) return { label:'Applied Proficiency', color:'#0369a1', bg:'#e0f2fe', desc:'Strong foundational thinking with room to sharpen. You correctly identified most root causes and opportunity framings, but occasionally anchored too early in the solution space. The next level is instinctively pausing to ask "are we solving the right problem?" before evaluating options.' };
+  if(score >= 60) return { label:'Core Competency', color:'#7c3aed', bg:'#ede9fe', desc:'You have solid PM instincts and understand the frameworks conceptually. The gap is in applying them under pressure — when a scenario pushes toward an obvious solution, you sometimes follow. The key practice: slow down at the problem definition stage before the solution feels obvious.' };
+  return { label:'Foundational Understanding', color:'#b45309', bg:'#fef3c7', desc:'You\'re building the foundation. The frameworks covered here — OST, JTBD, 5 Whys, TAM/SAM/SOM, Assumption Mapping — are the core toolkit for any PM. Review this simulation\'s feedback carefully, then apply one framework this week to a real problem at work.' };
+};
+
+/* ─────────────────────────────────────────────
+   FORMAT TEXT HELPER
+───────────────────────────────────────────── */
+const formatText = (text) => {
+  if(!text) return null;
+  return text.split('\n').map((line, i) => {
+    if(!line.trim()) return h('div', {key:i, className:'h-2'});
+    const parts = line.split(/(\*\*[^*]+\*\*)/g);
+    return h('p', {key:i, className:'mb-1.5 leading-relaxed text-sm text-slate-700'},
+      parts.map((part, j) => {
+        if(part.startsWith('**') && part.endsWith('**')) {
+          return h('strong', {key:j, className:'text-blue-800 font-semibold'}, part.slice(2,-2));
+        }
+        return h('span', {key:j}, part);
+      })
+    );
+  });
+};
+
+/* ─────────────────────────────────────────────
+   CANVAS BADGE
+───────────────────────────────────────────── */
+const BANNER_IMG_SRC = 'data:image/jpeg;base64,/9j/4QC8RXhpZgAASUkqAAgAAAAGABIBAwABAAAAAQAAABoBBQABAAAAVgAAABsBBQABAAAAXgAAACgBAwABAAAAAgAAABMCAwABAAAAAQAAAGmHBAABAAAAZgAAAAAAAAD8AAAAAQAAAPwAAAABAAAABgAAkAcABAAAADAyMTABkQcABAAAAAECAwAAoAcABAAAADAxMDABoAMAAQAAAP//AAACoAQAAQAAALEHAAADoAQAAQAAAMUAAAAAAAAA/+EO4Wh0dHA6Ly9ucy5hZG9iZS5jb20veGFwLzEuMC8APD94cGFja2V0IGJlZ2luPSfvu78nIGlkPSdXNU0wTXBDZWhpSHpyZVN6TlRjemtjOWQnPz4KPHg6eG1wbWV0YSB4bWxuczp4PSdhZG9iZTpuczptZXRhLyc+CjxyZGY6UkRGIHhtbG5zOnJkZj0naHR0cDovL3d3dy53My5vcmcvMTk5OS8wMi8yMi1yZGYtc3ludGF4LW5zIyc+CgogPHJkZjpEZXNjcmlwdGlvbiByZGY6YWJvdXQ9JycKICB4bWxuczpBdHRyaWI9J2h0dHA6Ly9ucy5hdHRyaWJ1dGlvbi5jb20vYWRzLzEuMC8nPgogIDxBdHRyaWI6QWRzPgogICA8cmRmOlNlcT4KICAgIDxyZGY6bGkgcmRmOnBhcnNlVHlwZT0nUmVzb3VyY2UnPgogICAgIDxBdHRyaWI6Q3JlYXRlZD4yMDI2LTAyLTE0PC9BdHRyaWI6Q3JlYXRlZD4KICAgICA8QXR0cmliOkRhdGE+eyZxdW90O2RvYyZxdW90OzomcXVvdDtEQUhCUXVHcC1tNCZxdW90OywmcXVvdDt1c2VyJnF1b3Q7OiZxdW90O1VBRENrZmZCZkdJJnF1b3Q7LCZxdW90O2JyYW5kJnF1b3Q7OiZxdW90O21vaGFuIFNpbWhhbeKAmXMgdGVhbSZxdW90O308L0F0dHJpYjpEYXRhPgogICAgIDxBdHRyaWI6RXh0SWQ+MGZhNjRmOTgtNGZmYi00NDcxLWIxZWQtOTAyM2ZlMDIyMjAzPC9BdHRyaWI6RXh0SWQ+CiAgICAgPEF0dHJpYjpGYklkPjUyNTI2NTkxNDE3OTU4MDwvQXR0cmliOkZiSWQ+CiAgICAgPEF0dHJpYjpUb3VjaFR5cGU+MjwvQXR0cmliOlRvdWNoVHlwZT4KICAgIDwvcmRmOmxpPgogICA8L3JkZjpTZXE+CiAgPC9BdHRyaWI6QWRzPgogPC9yZGY6RGVzY3JpcHRpb24+CgogPHJkZjpEZXNjcmlwdGlvbiByZGY6YWJvdXQ9JycKICB4bWxuczpkYz0naHR0cDovL3B1cmwub3JnL2RjL2VsZW1lbnRzLzEuMS8nPgogIDxkYzp0aXRsZT4KICAgPHJkZjpBbHQ+CiAgICA8cmRmOmxpIHhtbDpsYW5nPSd4LWRlZmF1bHQnPlNpbXVsYWIgMiAoNzUwIHggMTAwIHB4KSAtIDE8L3JkZjpsaT4KICAgPC9yZGY6QWx0PgogIDwvZGM6dGl0bGU+CiA8L3JkZjpEZXNjcmlwdGlvbj4KCiA8cmRmOkRlc2NyaXB0aW9uIHJkZjphYm91dD0nJwogIHhtbG5zOnBkZj0naHR0cDovL25zLmFkb2JlLmNvbS9wZGYvMS4zLyc+CiAgPHBkZjpBdXRob3I+bW9oYW4gU2ltaGFtPC9wZGY6QXV0aG9yPgogPC9yZGY6RGVzY3JpcHRpb24+CgogPHJkZjpEZXNjcmlwdGlvbiByZGY6YWJvdXQ9JycKICB4bWxuczp4bXA9J2h0dHA6Ly9ucy5hZG9iZS5jb20veGFwLzEuMC8nPgogIDx4bXA6Q3JlYXRvclRvb2w+Q2FudmEgZG9jPURBSEJRdUdwLW00IHVzZXI9VUFEQ2tmZkJmR0kgYnJhbmQ9bW9oYW4gU2ltaGFt4oCZcyB0ZWFtPC94bXA6Q3JlYXRvclRvb2w+CiA8L3JkZjpEZXNjcmlwdGlvbj4KPC9yZGY6UkRGPgo8L3g6eG1wbWV0YT4KICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIAogICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgCiAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAKICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIAogICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgCiAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAKICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIAogICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgCiAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAKICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIAogICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgCiAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAKICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIAogICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgCiAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAKICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIAogICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgCiAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAKICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIAogICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgCiAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAKICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIAogICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgCiAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAKPD94cGFja2V0IGVuZD0ndyc/Pv/bAEMABgQFBgUEBgYFBgcHBggKEAoKCQkKFA4PDBAXFBgYFxQWFhodJR8aGyMcFhYgLCAjJicpKikZHy0wLSgwJSgpKP/bAEMBBwcHCggKEwoKEygaFhooKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKP/AABEIAMUHsQMBIgACEQEDEQH/xAAfAAABBQEBAQEBAQAAAAAAAAAAAQIDBAUGBwgJCgv/xAC1EAACAQMDAgQDBQUEBAAAAX0BAgMABBEFEiExQQYTUWEHInEUMoGRoQgjQrHBFVLR8CQzYnKCCQoWFxgZGiUmJygpKjQ1Njc4OTpDREVGR0hJSlNUVVZXWFlaY2RlZmdoaWpzdHV2d3h5eoOEhYaHiImKkpOUlZaXmJmaoqOkpaanqKmqsrO0tba3uLm6wsPExcbHyMnK0tPU1dbX2Nna4eLj5OXm5+jp6vHy8/T19vf4+fr/xAAfAQADAQEBAQEBAQEBAAAAAAAAAQIDBAUGBwgJCgv/xAC1EQACAQIEBAMEBwUEBAABAncAAQIDEQQFITEGEkFRB2FxEyIygQgUQpGhscEJIzNS8BVictEKFiQ04SXxFxgZGiYnKCkqNTY3ODk6Q0RFRkdISUpTVFVWV1hZWmNkZWZnaGlqc3R1dnd4eXqCg4SFhoeIiYqSk5SVlpeYmZqio6Slpqeoqaqys7S1tre4ubrCw8TFxsfIycrS09TV1tfY2dri4+Tl5ufo6ery8/T19vf4+fr/2gAMAwEAAhEDEQA/APlSiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKXB9KAEooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKWgVowaNeSrvkjFvHgEvMdnHrjqR9AaaTewm7FO0tp7y5jt7SGSeeQ4SONSzMfQAcmp9U0u/0m48jVLK5s5yNwjuImjbHrggGvTPghq+h+EvGMl3qV4kmbWSIzGM+XASVO7cASc429B97Heup+PHinw/4ktdLj025TU7mDzJvMgTb5cZ4OAynfyvIB4xn1I3VFcnM3qYOtJVFBR07nhGm2pubuJGDCIuqu+OFBPrXqI0yxEHki0g8vGMbB/P+teceVb3Ug26hIAgyTPEVAHttLf0rXg1bVpQYYriKSIjClHUyY6cA4Yn8M11YKvSopqavcxxdGpVs4O1jB1Kz8jULiKAF40kZRg5OAapMpU4YEEdjW7D4d1nUBdtDpl48lqhlmZYmICD+I+n19qxvNlj+QswA42np+VcM0r3sdcXpa5FRU4m3cPFG/pxj+WKnFuh/wBbG0Puzj9FPJqVG+xV7FKit3VtP02DTLaa0ut8z9cnIPHPAHHasbyZD90bv905/lTnTcHZijNSV0RUUpBBIIIIpKgoKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAorZ8NeGNc8T3ZtvD+lXmoSr94QRFgnux6KPqRXcn4BfEoQeb/AMI2cYzt+2W+78vMoA8torX8R+G9a8M3gtfEGl3enznlVuIioceqnow9xmsigAooooAKKKKACiitPw/oGreIr4Wehabd6hc4yY7eIuVHqcdB7mgDMor1FPgH8Sng80eGyBjO03luG/LzM1xXifwnr/hW4WHxFpF5p7twhmjIV/8Adbo34E0AYdFFFABRRRQAUVYsbO51C7itbC3mubqU7Y4YULu59ABya9EsfgV8SL2BZovDMyIRkCa5hib/AL5ZwR+IoA8zorpvFngTxR4RwfEWiXljGTtEzJuiJ9A65XPtmuZoAKK1PDWgap4n1mDStCs5Ly/nzsiQgdBkkkkAADuTirnjTwbr/grUo7HxNp0ljcSJ5kYLK6uucZDKSD+fFAHP0UUUAFFFFABRRRQAUUUUAFFFFABRRV3RLIalrNhYlzGL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XD/8fMI/vbv4wPRuT617V+054R07xP8ADG71uOOM6jpcQura5UctFkF0J7qVJI9wPevHfDn7LviefVoV8QahptppquDK1vI0krL3CDaBk+pPHoelevftOeK9O8LfC640GGRBf6nEtpbW4OSsQI3uR/dCjbn1I96XXQD4doooqgCiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKAFrore8utMks4LCQLcGBdxI+UK2ZOc+gbk9gM961fhp8Odc8dT3DaPBEYLbG+Wd9sYY9BnnPrgCs/x7pGoeGvEOoaZq1uYL93LyDcGHlk5QKRwQRg5+g4wa2hKVL346MylyzfI9TO1nUZ7m5WdJ5CpBw3Qk9Ccds4HHYYHaoLK8mE/mMVbYC+5lBOR0569cVXh/eQyRHqPnX6jr+n8hRH8lpK3QsQg9x1P8h+dNzlKXM2UopLlSPRfFfgPWNG8Fw+JL7TY49O1BoZiIpgHi3KSNy84DFjgDpgZwa5jwjp1nqGosrySbVQkxkAbu2M59/SpNZ8f+JtZ8MWnh/UtTabSbUII4fLQHCDCgsBuOB6muYhleGQPE7I46MpwRVUq0IVFKSujOVOUoON7M6HxlZw6Zdx21ocRsgYrnJHJ4z6d/8iubp8sjzSF5XZnPJZjkmmVFeoqlRyirLsXSg4QUW7sKKKKxNAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACvWfhj4t8I6T4V1S08UWAur6VjtZoBIZI9oAQN/Dggn8R6V5NRV06jg7ozqU1UXKzU/tCFD+4gkhA6GN1DD/AIFt3frVeWe3ldnkjuXc9WaYEn/x2qdFTzMtJItAWpOfMnT22Bv6ir9w1rcW63DyzOMhJP3QyG7HO7uAT7kNWNVmylWO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oAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAsJFJcJmON3ZeDtBPHaoCCpIYYIrrtF8v8As2Hy8f7X1rJ8QtEt4uxFMm35jW0qSUea5jGrebjYx1BY4AJPtT/KI+8Qv1PP5daRpXIxuwPQcCmVkbEn7sdSzfTijzMfcVR+Gf51HRQA5mZj8xJ+tNoopAFFFFABRRRQAUUUUAFFFFABRRRQAUUUUAFFFFABRRRQAUUUUAFFFFABRRRQAUUUUAFFFFABRRRQAUUUUAFFFFABRRRQAUUUUAFFFFABRRRQAUUUUAFFFFABRRRQAUUUUAFFFFABRRRQAUUUUAFFFFABRRRQAUUUUAFFFFABRRRQAUUUUAFFFFABRRRQAUUUUAFFFFABRRRQAUUUUAFFFFABRRRQAUUUUAFFFFABRRRQAUUUUAFFFFABRRRQAUUUUAFFFFABRRRQAUUUUAFFFFABRRRQAUUUUAFFFFABRRRQAUUUUAFFFFABRRRQAUUUUAFFFFABRRRQAUUUUAFFFFABRRRQAUUUUAFFFFABRRRQAUUUUAFFFFABRRRQAUUUUAFFFFABRRRQAUUUUAFFFFABRRRQAUUUUAFFFFABRRRQAUUUUAFFFFABRRRQAUUUUAFFFFABRRRQAUUUUAFFFFABRRRQAUUUUAFFFFABRRRQAUUUUAFFFFABRRRQAUUUUAFFFFABRRRQAUUUUAFFFFABRRRQAUUUUAFFFFABRRRQAUUUUAFFFFABRRRQAUUUUAFFFFABRRRQAUUUUAFFFFABRRRQAUUUUAFFFFABRRRQAUUUUAFFFFABRRRQAUUUUASxTyw58qR0z12sRUbMWYliST3NJS07gJRRRSAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooA0f7N/6a/+O/8A16P7N/6a/wDjv/16KKAD+zf+mv8A47/9ej+zf+mv/jv/ANeiigA/s3/pr/47/wDXo/s3/pr/AOO//XoooAP7N/6a/wDjv/16P7N/6a/+O/8A16KKAD+zf+mv/jv/ANej+zf+mv8A47/9eiigA/s3/pr/AOO//Xo/s3/pr/47/wDXoooAP7N/6a/+O/8A16P7N/6a/wDjv/16KKAD+zf+mv8A47/9ej+zf+mv/jv/ANeiigA/s3/pr/47/wDXo/s3/pr/AOO//XoooAP7N/6a/wDjv/16P7N/6a/+O/8A16KKAD+zf+mv/jv/ANej+zf+mv8A47/9eiigA/s3/pr/AOO//Xo/s3/pr/47/wDXoooAP7N/6a/+O/8A16P7N/6a/wDjv/16KKAD+zf+mv8A47/9ej+zf+mv/jv/ANeiigA/s3/pr/47/wDXo/s3/pr/AOO//XoooAP7N/6a/wDjv/16P7N/6a/+O/8A16KKAD+zf+mv/jv/ANej+zf+mv8A47/9eiigA/s3/pr/AOO//Xo/s3/pr/47/wDXoooAP7N/6a/+O/8A16P7N/6a/wDjv/16KKAD+zf+mv8A47/9ej+zf+mv/jv/ANeiigA/s3/pr/47/wDXo/s3/pr/AOO//XoooAP7N/6a/wDjv/16P7N/6a/+O/8A16KKAD+zf+mv/jv/ANej+zf+mv8A47/9eiigA/s3/pr/AOO//Xo/s3/pr/47/wDXoooAP7N/6a/+O/8A16P7N/6a/wDjv/16KKAD+zf+mv8A47/9ej+zf+mv/jv/ANeiigA/s3/pr/47/wDXo/s3/pr/AOO//XoooAP7N/6a/wDjv/16P7N/6a/+O/8A16KKAD+zf+mv/jv/ANej+zf+mv8A47/9eiigA/s3/pr/AOO//Xo/s3/pr/47/wDXoooAP7N/6a/+O/8A16P7N/6a/wDjv/16KKAD+zf+mv8A47/9ej+zf+mv/jv/ANeiigA/s3/pr/47/wDXo/s3/pr/AOO//XoooAP7N/6a/wDjv/16P7N/6a/+O/8A16KKAD+zf+mv/jv/ANej+zf+mv8A47/9eiigA/s3/pr/AOO//Xo/s3/pr/47/wDXoooAP7N/6a/+O/8A16P7N/6a/wDjv/16KKAD+zf+mv8A47/9ej+zf+mv/jv/ANeiigA/s3/pr/47/wDXo/s3/pr/AOO//XoooAP7N/6a/wDjv/16P7N/6a/+O/8A16KKAD+zf+mv/jv/ANej+zf+mv8A47/9eiigA/s3/pr/AOO//Xo/s3/pr/47/wDXoooAP7N/6a/+O/8A16P7N/6a/wDjv/16KKAD+zf+mv8A47/9ej+zf+mv/jv/ANeiigA/s3/pr/47/wDXo/s3/pr/AOO//XoooAP7N/6a/wDjv/16P7N/6a/+O/8A16KKAD+zf+mv/jv/ANej+zf+mv8A47/9eiigA/s3/pr/AOO//Xo/s3/pr/47/wDXoooAP7N/6a/+O/8A16P7N/6a/wDjv/16KKAD+zf+mv8A47/9ej+zf+mv/jv/ANeiigA/s3/pr/47/wDXo/s3/pr/AOO//XoooAP7N/6a/wDjv/16P7N/6a/+O/8A16KKAD+zf+mv/jv/ANej+zf+mv8A47/9eiigA/s3/pr/AOO//Xo/s3/pr/47/wDXoooAP7N/6a/+O/8A16P7N/6a/wDjv/16KKAD+zf+mv8A47/9ej+zf+mv/jv/ANeiigA/s3/pr/47/wDXo/s3/pr/AOO//XoooAP7N/6a/wDjv/16P7N/6a/+O/8A16KKAD+zf+mv/jv/ANej+zf+mv8A47/9eiigA/s3/pr/AOO//Xo/s3/pr/47/wDXoooAP7N/6a/+O/8A16P7N/6a/wDjv/16KKAD+zf+mv8A47/9ej+zf+mv/jv/ANeiigA/s3/pr/47/wDXo/s3/pr/AOO//XoooAP7N/6a/wDjv/16P7N/6a/+O/8A16KKAD+zf+mv/jv/ANej+zf+mv8A47/9eiigA/s3/pr/AOO//Xo/s3/pr/47/wDXoooAP7N/6a/+O/8A16P7N/6a/wDjv/16KKAD+zf+mv8A47/9ej+zf+mv/jv/ANeiigA/s3/pr/47/wDXo/s3/pr/AOO//XoooAP7N/6a/wDjv/16P7N/6a/+O/8A16KKAD+zf+mv/jv/ANej+zf+mv8A47/9eiigA/s3/pr/AOO//Xo/s3/pr/47/wDXoooAP7N/6a/+O/8A16P7N/6a/wDjv/16KKAD+zf+mv8A47/9ej+zf+mv/jv/ANeiigA/s3/pr/47/wDXo/s3/pr/AOO//XoooAP7N/6a/wDjv/16P7N/6a/+O/8A16KKAD+zf+mv/jv/ANej+zf+mv8A47/9eiigA/s3/pr/AOO//Xo/s3/pr/47/wDXoooAP7N/6a/+O/8A16P7N/6a/wDjv/16KKAD+zf+mv8A47/9ej+zf+mv/jv/ANeiigA/s3/pr/47/wDXo/s3/pr/AOO//XoooAP7N/6a/wDjv/16P7N/6a/+O/8A16KKAD+zf+mv/jv/ANej+zf+mv8A47/9eiigA/s3/pr/AOO//Xo/s3/pr/47/wDXoooAP7N/6a/+O/8A16P7N/6a/wDjv/16KKAD+zf+mv8A47/9ej+zf+mv/jv/ANeiigA/s3/pr/47/wDXo/s3/pr/AOO//XoooAP7N/6a/wDjv/16P7N/6a/+O/8A16KKAD+zf+mv/jv/ANej+zf+mv8A47/9eiigA/s3/pr/AOO//Xo/s3/pr/47/wDXoooAP7N/6a/+O/8A16P7N/6a/wDjv/16KKAD+zf+mv8A47/9ej+zf+mv/jv/ANeiigA/s3/pr/47/wDXo/s3/pr/AOO//XoooAP7N/6a/wDjv/16P7N/6a/+O/8A16KKAD+zf+mv/jv/ANej+zf+mv8A47/9eiigA/s3/pr/AOO//Xo/s3/pr/47/wDXoooAP7N/6a/+O/8A16P7N/6a/wDjv/16KKAD+zf+mv8A47/9ej+zf+mv/jv/ANeiigA/s3/pr/47/wDXo/s3/pr/AOO//XoooAP7N/6a/wDjv/16P7N/6a/+O/8A16KKAD+zf+mv/jv/ANej+zf+mv8A47/9eiigA/s3/pr/AOO//Xo/s3/pr/47/wDXoooAP7N/6a/+O/8A16P7N/6a/wDjv/16KKAD+zf+mv8A47/9ej+zf+mv/jv/ANeiigA/s3/pr/47/wDXo/s3/pr/AOO//XoooAP7N/6a/wDjv/16P7N/6a/+O/8A16KKAD+zf+mv/jv/ANej+zf+mv8A47/9eiigA/s3/pr/AOO//Xo/s3/pr/47/wDXoooAP7N/6a/+O/8A16P7N/6a/wDjv/16KKAD+zf+mv8A47/9ej+zf+mv/jv/ANeiigA/s3/pr/47/wDXo/s3/pr/AOO//XoooAP7N/6a/wDjv/16P7N/6a/+O/8A16KKAD+zf+mv/jv/ANej+zf+mv8A47/9eiigA/s3/pr/AOO//Xo/s3/pr/47/wDXoooAP7N/6a/+O/8A16P7N/6a/wDjv/16KKAD+zf+mv8A47/9ej+zf+mv/jv/ANeiigA/s3/pr/47/wDXo/s3/pr/AOO//XoooAP7N/6a/wDjv/16P7N/6a/+O/8A16KKAD+zf+mv/jv/ANej+zf+mv8A47/9eiigA/s3/pr/AOO//Xo/s3/pr/47/wDXoooAP7N/6a/+O/8A16P7N/6a/wDjv/16KKAD+zf+mv8A47/9ej+zf+mv/jv/ANeiigA/s3/pr/47/wDXo/s3/pr/AOO//XoooAP7N/6a/wDjv/16KKKAP//Z';
+
+const downloadBadge = (score, tier, pct) => {
+  const canvas = document.createElement('canvas');
+  canvas.width = 1200; canvas.height = 675;
+  const ctx = canvas.getContext('2d');
+
+  // Background
+  ctx.fillStyle = '#ffffff'; ctx.fillRect(0,0,1200,675);
+
+  // Top black strip
+  ctx.fillStyle = '#000000'; ctx.fillRect(0,0,1200,80);
+
+  // Uber green accent bar on left
+  ctx.fillStyle = '#00D4AA'; ctx.fillRect(0,0,8,675);
+
+  // Load and draw banner image at bottom
+  const bannerImg = new Image();
+  bannerImg.onload = () => {
+    // Draw banner at bottom of certificate
+    const bannerH = 80;
+    const bannerY = 675 - bannerH;
+    ctx.drawImage(bannerImg, 0, bannerY, 1200, bannerH);
+
+    // Dark overlay on banner for text legibility
+    ctx.fillStyle = 'rgba(0,0,0,0.3)';
+    ctx.fillRect(0, bannerY, 1200, bannerH);
+
+    finalizeCert();
+  };
+  bannerImg.onerror = () => { finalizeCert(); };
+  bannerImg.src = BANNER_IMG_SRC;
+
+  function finalizeCert() {
+    // Header text (on black strip)
+    ctx.fillStyle = '#00D4AA';
+    ctx.font = 'bold 15px sans-serif';
+    ctx.fillText('PM SIMULATION SERIES · CXO SIMULABS', 28, 30);
+    ctx.fillStyle = '#ffffff';
+    ctx.font = '14px sans-serif';
+    ctx.fillText('experience  X  insight', 28, 60);
+
+    // Week badge
+    ctx.fillStyle = '#00D4AA';
+    ctx.fillRect(880, 15, 290, 50);
+    ctx.fillStyle = '#000000';
+    ctx.font = 'bold 20px sans-serif';
+    ctx.fillText('WEEK 5 OF 20', 920, 47);
+
+    // Big score
+    ctx.fillStyle = '#000000';
+    ctx.font = 'bold 130px sans-serif';
+    ctx.fillText(pct + '%', 28, 280);
+
+    // Tier label with pill background
+    ctx.fillStyle = '#000000';
+    ctx.fillRect(28, 300, 420, 58);
+    ctx.fillStyle = '#00D4AA';
+    ctx.font = 'bold 32px sans-serif';
+    ctx.fillText(tier, 42, 340);
+
+    // Simulation title
+    ctx.fillStyle = '#1a1a1a';
+    ctx.font = 'bold 26px sans-serif';
+    ctx.fillText('Problem Definition & Opportunity Sizing', 28, 415);
+
+    // Uber case study line
+    ctx.fillStyle = '#555555';
+    ctx.font = '20px sans-serif';
+    ctx.fillText('Case Study: Uber Technologies  ·  2009 – 2020', 28, 455);
+
+    // Divider
+    ctx.fillStyle = '#00D4AA';
+    ctx.fillRect(28, 475, 600, 3);
+
+    // Frameworks line
+    ctx.fillStyle = '#333333';
+    ctx.font = '16px sans-serif';
+    ctx.fillText('JTBD · TAM/SAM/SOM · Opportunity Solution Tree · Assumption Mapping · 5 Whys · Working Backwards', 28, 510);
+
+    // Attribution
+    ctx.fillStyle = '#000000';
+    ctx.font = 'bold 18px sans-serif';
+    ctx.fillText('Mohan Simham  ·  linkedin.com/in/mohansimham', 28, 545);
+
+    ctx.fillStyle = '#777777';
+    ctx.font = '14px sans-serif';
+    ctx.fillText('© 2025 Mohan Simham · CXO Simulabs · All Rights Reserved.', 28, 570);
+
+    // Uber logo area (top right)
+    ctx.fillStyle = '#000000';
+    ctx.font = 'bold 48px sans-serif';
+    ctx.fillText('🚗', 1100, 270);
+    ctx.font = 'bold 28px sans-serif';
+    ctx.fillStyle = '#000000';
+    ctx.fillText('UBER', 1095, 310);
+    ctx.fillStyle = '#555555';
+    ctx.font = '14px sans-serif';
+    ctx.fillText('Case Study', 1090, 335);
+
+    const link = document.createElement('a');
+    link.download = 'pm-simulation-week5-uber-certificate.png';
+    link.href = canvas.toDataURL('image/png', 1.0);
+    link.click();
+  }
+};
+
+/* ─────────────────────────────────────────────
+   MAIN COMPONENT
+───────────────────────────────────────────── */
+function PMSimulation() {
+  const [email, setEmail] = useState('');
+  const [hasStarted, setHasStarted] = useState(false);
+  const [currentQuestion, setCurrentQuestion] = useState(0);
+  const [answers, setAnswers] = useState([]);
+  const [selectedIdx, setSelectedIdx] = useState(null);
+  const [showResults, setShowResults] = useState(false);
+  const [hasAttempted, setHasAttempted] = useState(false);
+  const [attemptCount, setAttemptCount] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [emailError, setEmailError] = useState('');
+
+  // Init
+  useEffect(() => {
+    const urlParams = new URLSearchParams(window.location.search);
+    if(urlParams.get('reset') === 'true') {
+      Object.values(LS).forEach(k => localStorage.removeItem(k));
+    }
+    const attempted = localStorage.getItem(LS.attempted) === 'true';
+    setHasAttempted(attempted);
+    if(attempted) {
+      // Load results if available
+      const savedAnswers = localStorage.getItem(LS.answers);
+      if(savedAnswers) {
+        setAnswers(JSON.parse(savedAnswers));
+        setShowResults(true);
+        setHasStarted(true);
+      }
+    } else {
+      const savedEmail = localStorage.getItem(LS.email);
+      const savedStart = localStorage.getItem(LS.start);
+      if(savedEmail && savedStart) {
+        const startTime = parseInt(savedStart);
+        if(Date.now() - startTime < 24*60*60*1000) {
+          setEmail(savedEmail);
+          const savedQ = parseInt(localStorage.getItem(LS.question) || '0');
+          const savedAns = JSON.parse(localStorage.getItem(LS.answers) || '[]');
+          setCurrentQuestion(savedQ);
+          setAnswers(savedAns);
+          setHasStarted(true);
+        }
+      }
+    }
+    setLoading(false);
+    fetchAttemptCount().then(c => setAttemptCount(c));
+  }, []);
+
+  const DISPOSABLE_DOMAINS = ['mailinator.com','guerrillamail.com','yopmail.com','tempmail.com','throwam.com','sharklasers.com','guerrillamailblock.com','grr.la','guerrillamail.info','guerrillamail.biz','guerrillamail.de','guerrillamail.net','guerrillamail.org','spam4.me','trashmail.com','trashmail.me','trashmail.net','dispostable.com','maildrop.cc','discard.email','fakeinbox.com','mailnull.com','spamgourmet.com','mytrashmail.com','mailcatch.com','filzmail.com','spamfree24.org','mailexpire.com','spammotel.com','weg-werf-email.de','wegwerfmail.de','wegwerfmail.net','wegwerfmail.org','10minutemail.com','10minutemail.net','10minutemail.org','tempinbox.com','throwam.com','tempr.email','discard.email','crap.si','anonbox.net','getnada.com','mailnesia.com','spamhereplease.com','binkmail.com','safetymail.info'];
+
+  const validateEmail = (val) => {
+    const trimmed = val.trim();
+    if(!trimmed) return 'Please enter your email address';
+    const regex = /^[a-zA-Z0-9._%+\-]+@[a-zA-Z0-9.\-]+\.[a-zA-Z]{2,}$/;
+    if(!regex.test(trimmed)) return 'Please enter a valid email address (e.g. you@company.com)';
+    const domain = trimmed.split('@')[1].toLowerCase();
+    if(DISPOSABLE_DOMAINS.includes(domain)) return 'Please use your work or personal email — disposable addresses are not accepted';
+    return null;
+  };
+
+  const handleStart = () => {
+    const err = validateEmail(email);
+    if(err) {
+      setEmailError(err);
+      return;
+    }
+    localStorage.setItem(LS.email, email);
+    localStorage.setItem(LS.start, Date.now().toString());
+    setHasStarted(true);
+    sendToGoogleSheets({ email, simulation: SIM_NAME, status: 'started' });
+  };
+
+  const handleSelectAnswer = (idx) => { setSelectedIdx(idx); window.scrollTo({top:0, behavior:"smooth"}); };
+
+  const handleNext = () => {
+    if(selectedIdx === null) return;
+    const q = QUESTIONS[currentQuestion];
+    const chosen = q.answers[selectedIdx];
+    const newAnswers = [...answers, { questionId: q.id, chosenId: chosen.id, points: chosen.points }];
+    setAnswers(newAnswers);
+    localStorage.setItem(LS.answers, JSON.stringify(newAnswers));
+
+    if((currentQuestion + 1) % 3 === 0) {
+      sendToGoogleSheets({ email, simulation: SIM_NAME, status: 'progress', questionNumber: currentQuestion+1, totalQuestions: QUESTIONS.length });
+    }
+
+    if(currentQuestion + 1 >= QUESTIONS.length) {
+      const totalScore = newAnswers.reduce((s,a) => s + a.points, 0);
+      const pct = Math.round(totalScore);
+      const tier = getTier(totalScore);
+      sendToGoogleSheets({ email, simulation: SIM_NAME, score: totalScore, percentage: pct, tier: tier.label });
+      localStorage.setItem(LS.attempted, 'true');
+      localStorage.removeItem(LS.start);
+      setShowResults(true);
+    } else {
+      const nextQ = currentQuestion + 1;
+      setCurrentQuestion(nextQ);
+      localStorage.setItem(LS.question, nextQ.toString());
+      setSelectedIdx(null);
+      window.scrollTo({top:0, behavior:'smooth'});
+    }
+  };
+
+  if(loading) return h('div', {className:'flex items-center justify-center min-h-screen'}, h('div', {className:'text-slate-400 text-lg'}, 'Loading simulation…'));
+
+  // Already attempted
+  if(hasAttempted && !showResults) {
+    return h('div', {className:'min-h-screen bg-gradient-to-br from-slate-800 to-slate-900 flex items-center justify-center p-6'},
+      h('div', {className:'bg-white rounded-2xl shadow-2xl max-w-md w-full p-8 text-center'},
+        h('div', {className:'text-5xl mb-4'}, '🔒'),
+        h('h2', {className:'text-2xl font-bold text-slate-800 mb-3'}, 'Simulation Already Completed'),
+        h('p', {className:'text-slate-500 text-sm mb-6'}, 'Each participant gets one attempt to maintain assessment integrity.'),
+        h('a', {href:'https://linkedin.com/in/mohansimham', target:'_blank', className:'inline-block bg-blue-700 text-white px-6 py-3 rounded-lg font-semibold text-sm hover:bg-blue-800 transition'}, 'Follow Mohan Simham on LinkedIn')
+      )
+    );
+  }
+
+  // Results
+  if(showResults) {
+    const totalScore = answers.reduce((s,a) => s + a.points, 0);
+    const pct = Math.round(totalScore);
+    const tier = getTier(totalScore);
+    const linkedinText = `I completed Product Manager Simulation 5/20 today.\n\nMy assessment: ${pct}% – ${tier.label}\n\nCase study: Uber Technologies (2009–2020)\n\nKey frameworks tested:\n• Jobs-to-be-Done (JTBD)\n• TAM / SAM / SOM Analysis\n• Opportunity Solution Tree\n• Assumption Mapping\n• 5 Whys / Root Cause Analysis\n• Working Backwards (Amazon)\n\nThis simulation covers 10 real Uber strategic decisions — from the Paris taxi problem in 2008 that sparked the idea, to the COVID-19 pivot in 2020.\n\nLink in comments.\n\n#ProductManagement #ProductManager #PMSkills #ProfessionalDevelopment #ProductStrategy #StartupStrategy #UberStrategy #CXOSimulabs\n\nConnect with Mohan Simham for the complete PM simulation series: linkedin.com/in/mohansimham`;
+
+    const handleShare = () => {
+      navigator.clipboard.writeText(linkedinText).catch(()=>{});
+      window.open('https://www.linkedin.com/feed/', '_blank');
+    };
+
+    return h('div', {className:'min-h-screen bg-slate-50 pb-20'},
+      // Header
+      h('div', {className:'bg-gradient-to-r from-black to-gray-800 text-white py-12 px-4'},
+        h('div', {className:'max-w-3xl mx-auto text-center'},
+          h('div', {className:'text-sm font-medium mb-2', style:{color:'#00D4AA'}}, 'Simulation 5 of 20 · Uber Technologies'),
+          h('h1', {className:'text-3xl md:text-4xl font-extrabold mb-3'}, 'Your Results'),
+          h('div', {className:'text-7xl font-black mb-3'}, pct + '%'),
+          h('div', {className:'inline-block px-5 py-2 rounded-full text-lg font-bold', style:{background:tier.bg, color:tier.color}}, tier.label),
+          h('p', {className:'mt-4 text-blue-100 max-w-xl mx-auto text-sm leading-relaxed'}, tier.desc)
+        )
+      ),
+
+      // Binge section directly below score
+      h('div', {className:'max-w-3xl mx-auto px-4 mt-6 mb-2'},
+        h('div', {className:'bg-white rounded-xl shadow-sm border-l-4 border-black p-6'},
+          h('h3', {className:'text-base font-bold text-slate-800 mb-1'}, '🎯 Want to Binge on Simulations?'),
+          h('p', {className:'text-xs text-slate-500 mb-4'}, 'Test your PM skills across different companies and frameworks'),
+          h('div', {className:'grid grid-cols-2 md:grid-cols-4 gap-3'},
+            ...SIMULATION_CATALOG.filter(s => s.week !== WEEK_NUM).map(s =>
+              h('a', {key:s.week, href:s.url, target:'_blank', className:'card-hover block rounded-lg border-l-4 p-3 bg-slate-50 hover:bg-white border border-slate-100', style:{borderLeftColor:s.color}},
+                h('div', {className:'text-2xl mb-1'}, s.emoji),
+                h('div', {className:'text-xs font-bold text-slate-800 leading-tight'}, s.company),
+                h('div', {className:'text-xs text-slate-500 mt-0.5'}, 'Week ' + s.week + ' · ' + s.topic)
+              )
+            )
+          ),
+          h('p', {className:'text-xs text-slate-400 text-center mt-4'}, 'Complete all 20 simulations to earn the Full Series Badge')
+        )
+      ),
+
+      h('div', {className:'max-w-3xl mx-auto px-4 mt-4'},
+        // Share + Download
+        h('div', {className:'flex gap-3 flex-wrap mb-8'},
+          h('button', {onClick:handleShare, className:'flex items-center gap-2 bg-blue-700 text-white px-5 py-3 rounded-lg font-semibold text-sm hover:bg-blue-800 transition'},
+            '🔗 Share on LinkedIn'
+          ),
+          h('button', {onClick:()=>downloadBadge(totalScore, tier.label, pct), className:'flex items-center gap-2 bg-white border border-slate-200 text-slate-700 px-5 py-3 rounded-lg font-semibold text-sm hover:bg-slate-50 transition'},
+            '⬇ Download Badge'
+          )
+        ),
+
+        // Per-question review
+        h('h2', {className:'text-xl font-bold text-slate-800 mb-4'}, 'Question-by-Question Review'),
+        ...QUESTIONS.map((q, qi) => {
+          const userAnswer = answers[qi];
+          if(!userAnswer) return null;
+          const chosen = q.answers.find(a => a.id === userAnswer.chosenId);
+          const best = q.answers.find(a => a.points === 10);
+          const isCorrect = userAnswer.points === 10;
+          const isPartial = userAnswer.points >= 6 && !isCorrect;
+          const fbClass = isCorrect ? 'correct-fb' : isPartial ? 'partial-fb' : 'wrong-fb';
+          const fbIcon = isCorrect ? '✅' : isPartial ? '⚠️' : '❌';
+
+          return h('div', {key:qi, className:'bg-white rounded-xl shadow-sm border border-slate-100 p-5 mb-5'},
+            h('div', {className:'flex items-center gap-2 mb-2'},
+              h('span', {className:'bg-blue-100 text-blue-700 text-xs font-bold px-2 py-0.5 rounded-full'}, 'Q' + (qi+1)),
+              h('span', {className:'text-xs text-slate-400 font-medium uppercase tracking-wide'}, q.framework)
+            ),
+            h('p', {className:'font-semibold text-slate-800 text-sm mb-3'}, q.question),
+            h('div', {className:'flex items-start gap-2 mb-1'},
+              h('span', {className:'text-xs font-bold text-slate-500 min-w-[60px]'}, 'Your pick:'),
+              h('span', {className:'text-sm text-slate-700'}, chosen?.label + ' (' + userAnswer.points + ' pts)')
+            ),
+            !isCorrect && h('div', {className:'flex items-start gap-2 mb-2'},
+              h('span', {className:'text-xs font-bold text-slate-500 min-w-[60px]'}, 'Optimal:'),
+              h('span', {className:'text-sm text-slate-700'}, best?.label + ' (10 pts)')
+            ),
+            h('div', {className:'feedback-box ' + fbClass},
+              h('div', {className:'flex items-center gap-1.5 mb-2'},
+                h('span', {}, fbIcon),
+                h('span', {className:'text-xs font-bold text-slate-600'}, 'Mohan Simham\'s Comments')
+              ),
+              formatText(chosen?.feedback)
+            )
+          );
+        }),
+
+        // Disclaimer
+        h('div', {className:'bg-amber-50 border border-amber-200 rounded-xl p-5 mb-6 mt-2'},
+          h('p', {className:'text-xs text-amber-800 leading-relaxed'},
+            h('strong', {}, '⚠️ Educational Use Disclaimer: '),
+            'This simulation is created for learning purposes only. All scenarios are based on publicly available information, news reports, and published case studies. This simulation is not affiliated with, endorsed by, or sponsored by Uber Technologies, Inc. The "optimal" answers reflect established PM frameworks and publicly known outcomes — not insider knowledge. Financial figures are from public filings. © 2025 Mohan Simham. All Rights Reserved.'
+          )
+        ),
+
+        // Attempt counter
+        attemptCount && h('div', {className:'text-center mb-6 pulse-once'},
+          h('span', {className:'text-amber-600 font-semibold text-sm'}, '🔥 ' + attemptCount + '+ professionals have taken this simulation')
+        ),
+
+        // Footer
+        h('div', {className:'text-center text-xs text-slate-400 pb-4'},
+          '© 2025 Mohan Simham. All Rights Reserved. · ',
+          h('a', {href:'https://linkedin.com/in/mohansimham', target:'_blank', className:'text-blue-500 hover:underline'}, 'linkedin.com/in/mohansimham')
+        )
+      )
+    );
+  }
+
+  // Landing
+  if(!hasStarted) {
+    return h('div', {className:'min-h-screen landing-bg'},
+      h('div', {className:'max-w-2xl mx-auto px-4 py-16'},
+        h('div', {className:'text-center mb-10'},
+          h('div', {className:'inline-block bg-white bg-opacity-10 text-white text-xs font-bold px-3 py-1.5 rounded-full mb-4 tracking-widest uppercase'}, 'PM Simulation Series · Week 5 of 20'),
+          h('div', {className:'text-6xl mb-4'}, '🚗'),
+          h('h1', {className:'text-4xl md:text-5xl font-extrabold text-white mb-3 leading-tight'}, 'Uber Technologies'),
+          h('h2', {className:'text-xl font-semibold text-blue-200 mb-5'}, 'Problem Definition & Opportunity Sizing'),
+          h('p', {className:'text-gray-300 text-base leading-relaxed max-w-lg mx-auto'}, 'From a snowy Paris night in 2008 to a global pandemic in 2020 — 10 real Uber decisions. Can you define the right problem before jumping to solutions?')
+        ),
+
+        // Info cards
+        h('div', {className:'grid grid-cols-3 gap-3 mb-8'},
+          h('div', {className:'bg-white bg-opacity-10 rounded-xl p-4 text-center text-white'},
+            h('div', {className:'text-2xl font-black'}, '10'),
+            h('div', {className:'text-xs opacity-75 mt-1'}, 'Real Decisions')
+          ),
+          h('div', {className:'bg-white bg-opacity-10 rounded-xl p-4 text-center text-white'},
+            h('div', {className:'text-2xl font-black'}, '100'),
+            h('div', {className:'text-xs opacity-75 mt-1'}, 'Points Max')
+          ),
+          h('div', {className:'bg-white bg-opacity-10 rounded-xl p-4 text-center text-white'},
+            h('div', {className:'text-2xl font-black'}, '1'),
+            h('div', {className:'text-xs opacity-75 mt-1'}, 'Attempt Only')
+          )
+        ),
+
+        // Frameworks tested
+        h('div', {className:'bg-white bg-opacity-10 rounded-xl p-5 mb-6'},
+          h('p', {className:'text-gray-400 text-xs font-bold uppercase tracking-widest mb-3'}, 'Frameworks Tested'),
+          h('div', {className:'flex flex-wrap gap-2'},
+            ['JTBD Problem Framing', 'TAM/SAM/SOM Analysis', 'Opportunity Solution Tree', 'Assumption Mapping', '5 Whys Analysis', 'Working Backwards', 'Problem vs. Solution Space', 'Unit Economics Sizing'].map(f =>
+              h('span', {key:f, className:'bg-white bg-opacity-15 text-white text-xs px-3 py-1 rounded-full'}, f)
+            )
+          )
+        ),
+
+        // Email
+        h('div', {className:'bg-white rounded-2xl shadow-xl p-6'},
+          h('label', {className:'block text-sm font-semibold text-slate-700 mb-2'}, 'Enter your email to begin'),
+          h('input', {
+            type:'email', value:email,
+            onChange:(e)=>{ setEmail(e.target.value); if(emailError) setEmailError(''); },
+            onKeyDown:(e)=>{ if(e.key==='Enter') handleStart(); },
+            placeholder:'you@company.com',
+            className:'w-full border border-slate-200 rounded-lg px-4 py-3 text-sm mb-1 focus:outline-none focus:ring-2 focus:ring-blue-500'
+          }),
+          emailError && h('p', {className:'text-red-500 text-xs mb-2'}, emailError),
+          h('p', {className:'text-xs text-slate-400 mb-4'}, 'Used for tracking only. Not shared. One attempt per email.'),
+          h('button', {onClick:handleStart, className:'w-full bg-black text-white py-3.5 rounded-lg font-bold text-base hover:bg-gray-900 transition'}, 'Start Simulation →'),
+          attemptCount && h('p', {className:'text-center text-amber-600 text-xs font-semibold mt-3 pulse-once'}, '🔥 Taken by ' + attemptCount + '+ professionals')
+        ),
+
+        h('p', {className:'text-center text-gray-500 text-xs mt-4'}, '© 2025 Mohan Simham · CXO Simulabs')
+      )
+    );
+  }
+
+  // Question screen
+  const q = QUESTIONS[currentQuestion];
+  const progress = Math.round(((currentQuestion) / QUESTIONS.length) * 100);
+
+  return h('div', {className:'min-h-screen bg-slate-50 pb-16'},
+    // Progress bar
+    h('div', {className:'bg-white shadow-sm sticky top-0 z-10'},
+      h('div', {className:'max-w-2xl mx-auto px-4 py-3'},
+        h('div', {className:'flex items-center justify-between mb-2'},
+          h('span', {className:'text-xs font-semibold text-slate-500'}, 'Question ' + (currentQuestion+1) + ' of ' + QUESTIONS.length),
+          h('span', {className:'text-xs font-semibold text-blue-700 bg-blue-50 px-2 py-0.5 rounded-full'}, q.framework)
+        ),
+        h('div', {className:'w-full bg-slate-100 rounded-full h-2'},
+          h('div', {className:'h-2 rounded-full progress-bar-fill', style:{background:'#000000', width: progress + '%'}})
+        )
+      )
+    ),
+
+    h('div', {className:'max-w-2xl mx-auto px-4 py-6 slide-in'},
+      // Scenario card
+      h('div', {className:'bg-white rounded-xl shadow-sm border border-slate-100 p-6 mb-5'},
+        h('div', {className:'flex items-center gap-2 mb-3'},
+          h('span', {className:'text-xs text-slate-400 font-medium'}, '📅 ' + q.date),
+          h('span', {className:'text-slate-200'}, '·'),
+          h('span', {className:'text-xs font-bold text-blue-700'}, q.title)
+        ),
+        h('div', {className:'text-sm leading-[1.85] text-slate-600'},
+          formatText(q.scenario)
+        )
+      ),
+
+      // Question
+      h('p', {className:'text-base font-bold text-slate-800 mb-4 px-1'}, q.question),
+
+      // Answer options
+      h('div', {className:'flex flex-col gap-3 mb-6'},
+        q.answers.map((ans, idx) =>
+          h('div', {
+            key:idx,
+            className:'option-row' + (selectedIdx === idx ? ' selected' : ''),
+            onClick:()=>handleSelectAnswer(idx)
+          },
+            h('div', {className:'option-radio' + (selectedIdx === idx ? ' selected' : ''), style:{marginTop:'2px'}}),
+            h('div', {className:'flex-1'},
+              h('div', {className:'option-label'}, ans.label),
+              h('div', {className:'option-reason'}, ans.reason)
+            )
+          )
+        )
+      ),
+
+
+      // Attribution strip
+      h('div', {className:'attribution-strip'},
+        h('div', {className:'flex items-center justify-center gap-3'},
+          h('div', {className:'w-8 h-8 rounded-full bg-black flex items-center justify-center text-white text-xs font-bold'}, 'MS'),
+          h('div', {},
+            h('p', {className:'text-xs font-semibold text-slate-700'}, 'Mohan Simham'),
+            h('a', {href:'https://linkedin.com/in/mohansimham', target:'_blank', className:'text-xs text-blue-600 hover:underline'}, 'linkedin.com/in/mohansimham · CXO Simulabs')
+          )
+        )
+      ),
+
+      // Next button
+      h('button', {
+        onClick:handleNext,
+        disabled:selectedIdx === null,
+        className:'w-full py-4 rounded-xl font-bold text-base transition ' + (selectedIdx !== null ? 'bg-black text-white hover:bg-gray-900 cursor-pointer' : 'bg-slate-200 text-slate-400 cursor-not-allowed')
+      }, currentQuestion + 1 < QUESTIONS.length ? 'Next Challenge →' : 'See My Results →')
+    )
+  );
+}
+
+ReactDOM.createRoot(document.getElementById('root')).render(React.createElement(PMSimulation));
+</script>
+</body>
+</html>
