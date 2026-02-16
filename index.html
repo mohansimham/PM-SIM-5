@@ -809,7 +809,7 @@ function PMSimulation() {
     sendToGoogleSheets({ email, simulation: SIM_NAME, status: 'started' });
   };
 
-  const handleSelectAnswer = (idx) => { setSelectedIdx(idx); window.scrollTo({top:0, behavior:"smooth"}); };
+  const handleSelectAnswer = (idx) => { setSelectedIdx(idx); setTimeout(() => { const btn = document.getElementById('next-btn'); if(btn) btn.scrollIntoView({behavior:'smooth', block:'center'}); }, 50); };
 
   const handleNext = () => {
     if(selectedIdx === null) return;
@@ -837,6 +837,7 @@ function PMSimulation() {
       localStorage.setItem(LS.question, nextQ.toString());
       setSelectedIdx(null);
       window.scrollTo({top:0, behavior:'smooth'});
+      setTimeout(() => window.scrollTo({top:0, behavior:'smooth'}), 50);
     }
   };
 
@@ -1089,6 +1090,7 @@ function PMSimulation() {
 
       // Next button
       h('button', {
+        id:'next-btn',
         onClick:handleNext,
         disabled:selectedIdx === null,
         className:'w-full py-4 rounded-xl font-bold text-base transition ' + (selectedIdx !== null ? 'bg-black text-white hover:bg-gray-900 cursor-pointer' : 'bg-slate-200 text-slate-400 cursor-not-allowed')
