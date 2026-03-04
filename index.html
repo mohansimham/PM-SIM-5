@@ -371,7 +371,7 @@ footer a{color:#556677;text-decoration:none;}
     <div class="cert-section">
       <h3>Your Certificate</h3>
       <p style="font-size:.82em;color:var(--muted);margin-bottom:16px;">Download the certificate for LinkedIn or the square badge for Instagram, WhatsApp and other social media.</p>
-      <canvas id="certCanvas" width="900" height="620"></canvas>
+      <canvas id="certCanvas" width="1200" height="850"></canvas>
       <div class="cert-buttons" style="margin-top:14px;">
         <button class="btn btn-navy" onclick="downloadCert()" style="width:auto;">↓ Certificate (LinkedIn)</button>
         <button class="btn btn-navy" onclick="downloadBadge()" style="width:auto;">↓ Badge (Instagram)</button>
@@ -1417,249 +1417,302 @@ function centeredLogo(ctx, W, y, size='bold 15px'){
 function drawCertificate(pct, tier){
   const canvas = document.getElementById('certCanvas');
   const ctx = canvas.getContext('2d');
-  const W=900, H=620;
+  const W=1200, H=850;
+  canvas.width=W; canvas.height=H;
   ctx.clearRect(0,0,W,H);
+  const CX=W/2;
+  const gold='#c9a84c';
 
-  // ── White background ──
-  ctx.fillStyle='#ffffff';
-  ctx.fillRect(0,0,W,H);
+  // ── Dark gradient background ──
+  const bg=ctx.createLinearGradient(0,0,W,H);
+  bg.addColorStop(0,'#0c1221'); bg.addColorStop(0.5,'#131b2e'); bg.addColorStop(1,'#1a1a2e');
+  ctx.fillStyle=bg; ctx.fillRect(0,0,W,H);
 
-  // Subtle warm tint strip at top
-  ctx.fillStyle='#1a1a2e';
-  ctx.fillRect(0,0,W,90);
+  // ── Subtle dot grid ──
+  ctx.fillStyle='rgba(255,255,255,0.018)';
+  for(let x=0;x<W;x+=40)for(let y=0;y<H;y+=40){ctx.beginPath();ctx.arc(x,y,1.2,0,Math.PI*2);ctx.fill();}
 
-  // ── Navy border frame ──
-  ctx.strokeStyle='#1a1a2e'; ctx.lineWidth=2;
-  ctx.strokeRect(14,14,W-28,H-28);
-  ctx.strokeStyle='rgba(26,26,46,0.15)'; ctx.lineWidth=0.6;
-  ctx.strokeRect(22,22,W-44,H-44);
+  // ── Gold accent bar at top ──
+  const topGrad=ctx.createLinearGradient(0,0,W,0);
+  topGrad.addColorStop(0,'#c9a84c'); topGrad.addColorStop(0.5,'#e8d48b'); topGrad.addColorStop(1,'#c9a84c');
+  ctx.fillStyle=topGrad; ctx.fillRect(0,0,W,5);
 
-  // ── Corner marks (below the top band) ──
-  [[24,90+6,1],[W-24,90+6,-1]].forEach(([cx,cy,sx])=>{
-    ctx.strokeStyle='rgba(26,26,46,0.25)'; ctx.lineWidth=1;
-    ctx.beginPath();ctx.moveTo(cx,cy);ctx.lineTo(cx+sx*22,cy);ctx.stroke();
+  // ── Border frame ──
+  ctx.strokeStyle='rgba(201,168,76,0.25)'; ctx.lineWidth=1;
+  ctx.strokeRect(24,24,W-48,H-48);
+
+  // ── Corner ornaments ──
+  [[26,26,1,1],[W-26,26,-1,1],[26,H-26,1,-1],[W-26,H-26,-1,-1]].forEach(([x,y,sx,sy])=>{
+    ctx.strokeStyle='rgba(201,168,76,0.4)'; ctx.lineWidth=1.5;
+    ctx.beginPath();ctx.moveTo(x,y);ctx.lineTo(x+sx*32,y);ctx.stroke();
+    ctx.beginPath();ctx.moveTo(x,y);ctx.lineTo(x,y+sy*32);ctx.stroke();
   });
-  [[24,H-24,1,1],[W-24,H-24,-1,1]].forEach(([cx,cy,sx,sy])=>{
-    ctx.strokeStyle='rgba(26,26,46,0.25)'; ctx.lineWidth=1;
-    ctx.beginPath();ctx.moveTo(cx,cy);ctx.lineTo(cx+sx*22,cy);ctx.stroke();
-    ctx.beginPath();ctx.moveTo(cx,cy);ctx.lineTo(cx,cy-sy*22);ctx.stroke();
-  });
 
-  // ── Logo in top dark band ──
+  // SECTION 1: HEADER
   ctx.textAlign='left';
-  ctx.font='bold 17px Inter, Arial, sans-serif';
+  ctx.font='bold 26px Inter, Arial, sans-serif';
   const cxoW=ctx.measureText('CXO').width;
-  ctx.fillStyle='#ffffff'; ctx.fillText('CXO',36,58);
-  ctx.fillStyle='#e23744'; ctx.fillText(' Simulabs',36+cxoW,58);
+  const slW=ctx.measureText(' Simulabs').width;
+  const logoX=CX-(cxoW+slW)/2;
+  ctx.fillStyle='#ffffff'; ctx.fillText('CXO',logoX,72);
+  ctx.fillStyle='#e23744'; ctx.fillText(' Simulabs',logoX+cxoW,72);
 
-  // Track pill
-  ctx.font='9px Inter, Arial, sans-serif';
-  ctx.fillStyle='rgba(255,255,255,0.45)';
-  ctx.letterSpacing='1.5px';
-  ctx.fillText('CPO TRACK  ·  SIMULATION 5',36,75);
-
-  // ── Seal in top-right of dark band ──
-  const sealX=840, sealY=50, sealR=32;
-  ctx.strokeStyle='rgba(255,255,255,0.25)'; ctx.lineWidth=1;
-  ctx.beginPath();ctx.arc(sealX,sealY,sealR,0,Math.PI*2);ctx.stroke();
-  ctx.strokeStyle='rgba(255,255,255,0.1)'; ctx.lineWidth=0.5;
-  ctx.beginPath();ctx.arc(sealX,sealY,sealR-6,0,Math.PI*2);ctx.stroke();
-  ctx.fillStyle='rgba(255,255,255,0.05)';
-  ctx.beginPath();ctx.arc(sealX,sealY,sealR,0,Math.PI*2);ctx.fill();
-  ctx.textAlign='center'; ctx.letterSpacing='0';
-  ctx.font='bold 7px Inter, Arial, sans-serif';
-  ctx.fillStyle='rgba(255,255,255,0.6)';
-  ctx.fillText('VERIFIED',sealX,sealY-6);
-  ctx.font='bold 16px Arial';
-  ctx.fillStyle='#e23744';
-  ctx.fillText('✓',sealX,sealY+8);
-  ctx.font='6px Inter, Arial, sans-serif';
-  ctx.fillStyle='rgba(255,255,255,0.35)';
-  ctx.fillText('cxosimulabs.com',sealX,sealY+22);
-
-  // ── CERTIFICATE OF COMPLETION ──
-  ctx.textAlign='center'; ctx.letterSpacing='3.5px';
-  ctx.font='10px Inter, Arial, sans-serif';
-  ctx.fillStyle='rgba(26,26,46,0.4)';
-  ctx.fillText('CERTIFICATE OF COMPLETION',W/2,128);
-  ctx.strokeStyle='rgba(26,26,46,0.12)'; ctx.lineWidth=0.7;
-  ctx.beginPath();ctx.moveTo(60,128);ctx.lineTo(230,128);ctx.stroke();
-  ctx.beginPath();ctx.moveTo(W-230,128);ctx.lineTo(W-60,128);ctx.stroke();
-
-  // ── "This certifies that" ──
-  ctx.letterSpacing='0';
-  ctx.font='italic 14px Georgia, serif';
-  ctx.fillStyle='rgba(26,26,46,0.45)';
-  ctx.fillText('This certifies that',W/2,178);
-
-  // ── NAME ──
-  const name=state.name||state.email;
-  ctx.font='bold 50px Georgia, "Times New Roman", serif';
-  ctx.fillStyle='#1a1a2e';
-  ctx.fillText(name,W/2,244);
-
-  // Clean navy underline
-  const nw=Math.min(ctx.measureText(name).width+50,W-120);
-  ctx.strokeStyle='rgba(26,26,46,0.2)'; ctx.lineWidth=1;
-  ctx.beginPath();ctx.moveTo(W/2-nw/2,256);ctx.lineTo(W/2+nw/2,256);ctx.stroke();
-
-  // ── Description ──
-  ctx.font='italic 13px Georgia, serif';
-  ctx.fillStyle='rgba(26,26,46,0.45)';
-  ctx.fillText('has successfully completed',W/2,290);
-
-  // ── Sim title ──
-  ctx.letterSpacing='0';
-  ctx.font='bold 18px Inter, Arial, sans-serif';
-  ctx.fillStyle='#e23744';
-  ctx.fillText('CPO Simulation 5: Uber — Market Sizing & Unit Economics',W/2,320);
-
-  // ── Divider ──
-  ctx.strokeStyle='rgba(26,26,46,0.08)'; ctx.lineWidth=1;
-  ctx.beginPath();ctx.moveTo(60,342);ctx.lineTo(W-60,342);ctx.stroke();
-
-  // ── Score / Tier / Date ──
-  const colY=396;
-  const scoreColor=pct>=90?'#059669':pct>=75?'#2563eb':pct>=60?'#d97706':'#dc2626';
-
-  // Score
   ctx.textAlign='center';
-  ctx.font='bold 46px Inter, Arial, sans-serif';
-  ctx.fillStyle=scoreColor;
-  ctx.fillText(pct+'%',195,colY);
-  ctx.font='8px Inter, Arial, sans-serif';
-  ctx.fillStyle='rgba(26,26,46,0.35)';
-  ctx.letterSpacing='2px';
-  ctx.fillText('SCORE',195,colY+20);
-
-  // Separator
-  ctx.strokeStyle='rgba(26,26,46,0.1)'; ctx.lineWidth=1;
-  ctx.beginPath();ctx.moveTo(360,360);ctx.lineTo(360,430);ctx.stroke();
-
-  // Tier
+  ctx.font='600 11px Inter, Arial, sans-serif';
+  ctx.fillStyle=gold; ctx.letterSpacing='3px';
+  ctx.fillText('CPO TRACK  ·  SIMULATION 5',CX,98);
   ctx.letterSpacing='0';
-  ctx.font='bold 20px Inter, Arial, sans-serif';
-  ctx.fillStyle='#1a1a2e';
-  ctx.fillText(tier,W/2,colY-4);
-  ctx.font='8px Inter, Arial, sans-serif';
-  ctx.fillStyle='rgba(26,26,46,0.35)';
-  ctx.letterSpacing='2px';
-  ctx.fillText('PERFORMANCE TIER',W/2,colY+20);
 
-  // Separator
-  ctx.beginPath();ctx.moveTo(W-360,360);ctx.lineTo(W-360,430);ctx.stroke();
+  ctx.strokeStyle='rgba(201,168,76,0.3)'; ctx.lineWidth=0.8;
+  ctx.beginPath();ctx.moveTo(CX-110,116);ctx.lineTo(CX+110,116);ctx.stroke();
+  ctx.fillStyle=gold;
+  ctx.beginPath();ctx.moveTo(CX,112);ctx.lineTo(CX+4,116);ctx.lineTo(CX,120);ctx.lineTo(CX-4,116);ctx.closePath();ctx.fill();
 
-  // Date
+  // SECTION 2: TITLE
+  ctx.letterSpacing='6px';
+  ctx.font='600 13px Inter, Arial, sans-serif';
+  ctx.fillStyle=gold;
+  ctx.fillText('CERTIFICATE OF COMPLETION',CX,152);
   ctx.letterSpacing='0';
+
+  // SECTION 3: NAME
+  ctx.font='italic 15px Georgia, serif';
+  ctx.fillStyle='rgba(255,255,255,0.4)';
+  ctx.fillText('This certifies that',CX,200);
+
+  const name=state.name||state.email;
+  ctx.font='bold 52px Georgia, "Times New Roman", serif';
+  ctx.fillStyle='#ffffff';
+  ctx.fillText(name,CX,260);
+
+  const nw=Math.min(ctx.measureText(name).width+60,W-200);
+  const ulGrad=ctx.createLinearGradient(CX-nw/2,0,CX+nw/2,0);
+  ulGrad.addColorStop(0,'rgba(201,168,76,0)'); ulGrad.addColorStop(0.3,'rgba(201,168,76,0.45)');
+  ulGrad.addColorStop(0.5,'rgba(201,168,76,0.65)'); ulGrad.addColorStop(0.7,'rgba(201,168,76,0.45)');
+  ulGrad.addColorStop(1,'rgba(201,168,76,0)');
+  ctx.strokeStyle=ulGrad; ctx.lineWidth=1.2;
+  ctx.beginPath();ctx.moveTo(CX-nw/2,275);ctx.lineTo(CX+nw/2,275);ctx.stroke();
+
+  // SECTION 4: ACHIEVEMENT — Competency HERO
+  ctx.font='italic 14px Georgia, serif';
+  ctx.fillStyle='rgba(255,255,255,0.38)';
+  ctx.fillText('has demonstrated executive-level competency in',CX,316);
+
+  ctx.font='bold 28px Inter, Arial, sans-serif';
+  ctx.fillStyle='#ffffff';
+  ctx.fillText('Market Sizing & Unit Economics',CX,358);
+
+  ctx.font='15px Inter, Arial, sans-serif';
+  ctx.fillStyle='rgba(255,255,255,0.35)';
+  ctx.fillText('through the Uber case simulation',CX,390);
+
+  // SECTION 5: METRICS
+  const divGrad1=ctx.createLinearGradient(100,0,W-100,0);
+  divGrad1.addColorStop(0,'rgba(201,168,76,0)'); divGrad1.addColorStop(0.2,'rgba(201,168,76,0.2)');
+  divGrad1.addColorStop(0.5,'rgba(201,168,76,0.3)'); divGrad1.addColorStop(0.8,'rgba(201,168,76,0.2)');
+  divGrad1.addColorStop(1,'rgba(201,168,76,0)');
+  ctx.strokeStyle=divGrad1; ctx.lineWidth=0.6;
+  ctx.beginPath();ctx.moveTo(100,420);ctx.lineTo(W-100,420);ctx.stroke();
+
+  const metricsY=488;
+  const colL=240, colC=CX, colR=W-240;
+  const ringColor=pct>=90?'#4ade80':pct>=75?'#60a5fa':pct>=60?'#fbbf24':'#f87171';
+
+  const ringR=58, ringLw=8;
+  ctx.beginPath();ctx.arc(colL,metricsY,ringR,0,Math.PI*2);
+  ctx.strokeStyle='rgba(255,255,255,0.06)'; ctx.lineWidth=ringLw; ctx.stroke();
+  const angle=(pct/100)*Math.PI*2-Math.PI/2;
+  ctx.beginPath();ctx.arc(colL,metricsY,ringR,-Math.PI/2,angle);
+  ctx.strokeStyle=ringColor; ctx.lineWidth=ringLw; ctx.lineCap='round'; ctx.stroke();
+  ctx.lineCap='butt';
+  ctx.font='bold 44px Inter, Arial, sans-serif';
+  ctx.fillStyle='#ffffff';
+  ctx.fillText(pct+'%',colL,metricsY+14);
+  ctx.font='600 9px Inter, Arial, sans-serif';
+  ctx.fillStyle='rgba(255,255,255,0.3)'; ctx.letterSpacing='2px';
+  ctx.fillText('SCORE',colL,metricsY+38);
+  ctx.letterSpacing='0';
+
+  ctx.font='bold 26px Inter, Arial, sans-serif';
+  ctx.fillStyle=ringColor;
+  ctx.fillText(tier,colC,metricsY+8);
+  ctx.font='600 9px Inter, Arial, sans-serif';
+  ctx.fillStyle='rgba(255,255,255,0.3)'; ctx.letterSpacing='2px';
+  ctx.fillText('PERFORMANCE TIER',colC,metricsY+32);
+  ctx.letterSpacing='0';
+
   const d=new Date();
-  ctx.font='bold 17px Inter, Arial, sans-serif';
-  ctx.fillStyle='#1a1a2e';
-  ctx.fillText(`${d.toLocaleString('default',{month:'long'})} ${d.getFullYear()}`,W-195,colY-4);
-  ctx.font='8px Inter, Arial, sans-serif';
-  ctx.fillStyle='rgba(26,26,46,0.35)';
-  ctx.letterSpacing='2px';
-  ctx.fillText('DATE ISSUED',W-195,colY+20);
+  const dateStr=d.toLocaleString('default',{month:'long'})+' '+d.getDate()+', '+d.getFullYear();
+  ctx.font='bold 20px Inter, Arial, sans-serif';
+  ctx.fillStyle='#ffffff';
+  ctx.fillText(dateStr,colR,metricsY+8);
+  ctx.font='600 9px Inter, Arial, sans-serif';
+  ctx.fillStyle='rgba(255,255,255,0.3)'; ctx.letterSpacing='2px';
+  ctx.fillText('DATE ISSUED',colR,metricsY+32);
+  ctx.letterSpacing='0';
 
-  // ── Footer ──
-  ctx.strokeStyle='rgba(26,26,46,0.08)'; ctx.lineWidth=1;
-  ctx.beginPath();ctx.moveTo(34,H-52);ctx.lineTo(W-34,H-52);ctx.stroke();
-  ctx.textAlign='left'; ctx.letterSpacing='0';
+  ctx.strokeStyle='rgba(201,168,76,0.15)'; ctx.lineWidth=0.8;
+  const sepTop=metricsY-52, sepBot=metricsY+48;
+  ctx.beginPath();ctx.moveTo((colL+colC)/2,sepTop);ctx.lineTo((colL+colC)/2,sepBot);ctx.stroke();
+  ctx.beginPath();ctx.moveTo((colC+colR)/2,sepTop);ctx.lineTo((colC+colR)/2,sepBot);ctx.stroke();
+
+  ctx.strokeStyle=divGrad1; ctx.lineWidth=0.6;
+  ctx.beginPath();ctx.moveTo(100,556);ctx.lineTo(W-100,556);ctx.stroke();
+
+  // SECTION 6: COMPETENCIES
+  ctx.letterSpacing='2.5px';
+  ctx.font='600 9px Inter, Arial, sans-serif';
+  ctx.fillStyle=gold;
+  ctx.fillText('COMPETENCIES ASSESSED',CX,586);
+  ctx.letterSpacing='0';
+
+  const comps=COMP_MAP.map(c=>c.name);
+  ctx.font='11.5px Inter, Arial, sans-serif';
+  ctx.fillStyle='rgba(255,255,255,0.45)';
+  const compStartX=160, compSpacing=220;
+  comps.slice(0,5).forEach((c,i)=>{ctx.fillText(c,compStartX+i*compSpacing,614);});
+  comps.slice(5,10).forEach((c,i)=>{ctx.fillText(c,compStartX+i*compSpacing,640);});
+
+  // SECTION 7: FOOTER
+  const sealX=W-90, sealY=H-85, sealR2=32;
+  ctx.strokeStyle='rgba(201,168,76,0.3)'; ctx.lineWidth=1.2;
+  ctx.beginPath();ctx.arc(sealX,sealY,sealR2,0,Math.PI*2);ctx.stroke();
+  ctx.strokeStyle='rgba(201,168,76,0.12)'; ctx.lineWidth=0.6;
+  ctx.beginPath();ctx.arc(sealX,sealY,sealR2-6,0,Math.PI*2);ctx.stroke();
+  ctx.fillStyle='rgba(201,168,76,0.04)';
+  ctx.beginPath();ctx.arc(sealX,sealY,sealR2,0,Math.PI*2);ctx.fill();
+  ctx.font='bold 7px Inter, Arial, sans-serif';
+  ctx.fillStyle=gold; ctx.letterSpacing='1.5px';
+  ctx.fillText('VERIFIED',sealX,sealY-6);
+  ctx.letterSpacing='0';
+  ctx.font='bold 18px Arial';
+  ctx.fillStyle=gold;
+  ctx.fillText('✓',sealX,sealY+10);
+
+  const footGrad=ctx.createLinearGradient(50,0,W-50,0);
+  footGrad.addColorStop(0,'rgba(201,168,76,0)'); footGrad.addColorStop(0.3,'rgba(201,168,76,0.2)');
+  footGrad.addColorStop(0.5,'rgba(201,168,76,0.3)'); footGrad.addColorStop(0.7,'rgba(201,168,76,0.2)');
+  footGrad.addColorStop(1,'rgba(201,168,76,0)');
+  ctx.strokeStyle=footGrad; ctx.lineWidth=0.6;
+  ctx.beginPath();ctx.moveTo(50,H-55);ctx.lineTo(W-50,H-55);ctx.stroke();
+
+  ctx.textAlign='left';
   ctx.font='10px Inter, Arial, sans-serif';
-  ctx.fillStyle='rgba(26,26,46,0.22)';
-  ctx.fillText('© 2026 CXO Simulabs  ·  Educational simulation  ·  Not affiliated with Uber Technologies, Inc.',50,H-32);
+  ctx.fillStyle='rgba(255,255,255,0.18)';
+  ctx.fillText('© 2026 CXO Simulabs  ·  Educational simulation  ·  Not affiliated with Uber Technologies, Inc.',55,H-32);
+  ctx.textAlign='right';
+  ctx.fillStyle='rgba(255,255,255,0.22)';
+  ctx.font='bold 10px Inter, Arial, sans-serif';
+  ctx.fillText('www.cxosimulabs.com',W-55,H-32);
 }
 
 // ─── INSTAGRAM BADGE ──────────────────────────────────────
 function drawBadge(pct, tier){
   const canvas=document.getElementById('badgeCanvas');
   const ctx=canvas.getContext('2d');
-  const S=1080; // square
+  const S=1080;
   ctx.clearRect(0,0,S,S);
+  const C=S/2;
+  const gold='#c9a84c';
 
-  // Background
   const bg=ctx.createLinearGradient(0,0,S,S);
-  bg.addColorStop(0,'#0c1221'); bg.addColorStop(1,'#1a1a2e');
+  bg.addColorStop(0,'#0c1221'); bg.addColorStop(0.5,'#131b2e'); bg.addColorStop(1,'#1a1a2e');
   ctx.fillStyle=bg; ctx.fillRect(0,0,S,S);
 
-  // Subtle dot grid
-  ctx.fillStyle='rgba(255,255,255,0.025)';
-  for(let x=0;x<S;x+=48)for(let y=0;y<S;y+=48){
-    ctx.beginPath();ctx.arc(x,y,2,0,Math.PI*2);ctx.fill();
-  }
+  ctx.fillStyle='rgba(255,255,255,0.018)';
+  for(let x=0;x<S;x+=44)for(let y=0;y<S;y+=44){ctx.beginPath();ctx.arc(x,y,1.2,0,Math.PI*2);ctx.fill();}
 
-  // Red top accent bar
-  ctx.fillStyle='#e23744';
-  ctx.fillRect(0,0,S,8);
+  const topGrad=ctx.createLinearGradient(0,0,S,0);
+  topGrad.addColorStop(0,'#c9a84c'); topGrad.addColorStop(0.5,'#e8d48b'); topGrad.addColorStop(1,'#c9a84c');
+  ctx.fillStyle=topGrad; ctx.fillRect(0,0,S,6);
 
-  // CXO Simulabs logo top-center
-  ctx.textAlign='center';
-  ctx.font='bold 36px Inter, Arial, sans-serif';
-  const cxoW=ctx.measureText('CXO').width;
-  const simW=ctx.measureText(' Simulabs').width;
-  const logoStart=S/2-(cxoW+simW)/2;
-  ctx.fillStyle='#ffffff'; ctx.fillText('CXO',logoStart+cxoW/2,88);
-  ctx.fillStyle='#e23744'; ctx.fillText(' Simulabs',logoStart+cxoW+simW/2,88);
-  // easier: just split
-  ctx.textAlign='center';
-  ctx.font='bold 36px Inter, Arial, sans-serif';
-  const total=ctx.measureText('CXO Simulabs').width;
-  const lx=S/2-total/2;
-  ctx.fillStyle='#ffffff'; ctx.fillText('CXO',lx+ctx.measureText('CXO').width/2+0,88);
+  ctx.strokeStyle='rgba(201,168,76,0.25)'; ctx.lineWidth=1;
+  ctx.strokeRect(24,24,S-48,S-48);
+  [[26,26,1,1],[S-26,26,-1,1],[26,S-26,1,-1],[S-26,S-26,-1,-1]].forEach(([x,y,sx,sy])=>{
+    ctx.strokeStyle='rgba(201,168,76,0.4)'; ctx.lineWidth=1.5;
+    ctx.beginPath();ctx.moveTo(x,y);ctx.lineTo(x+sx*28,y);ctx.stroke();
+    ctx.beginPath();ctx.moveTo(x,y);ctx.lineTo(x,y+sy*28);ctx.stroke();
+  });
 
-  // Actually just use fillText with mixed colors properly:
   ctx.textAlign='left';
   ctx.font='bold 36px Inter, Arial, sans-serif';
   const cW=ctx.measureText('CXO').width;
   const sW=ctx.measureText(' Simulabs').width;
-  const totalW=cW+sW;
-  const lStart=S/2-totalW/2;
-  ctx.fillStyle='#ffffff'; ctx.fillText('CXO',lStart,88);
-  ctx.fillStyle='#e23744'; ctx.fillText(' Simulabs',lStart+cW,88);
+  const lStart=C-(cW+sW)/2;
+  ctx.fillStyle='#ffffff'; ctx.fillText('CXO',lStart,82);
+  ctx.fillStyle='#e23744'; ctx.fillText(' Simulabs',lStart+cW,82);
 
-  // CPO Track label
   ctx.textAlign='center';
-  ctx.font='bold 18px Inter, Arial, sans-serif';
-  ctx.fillStyle='rgba(255,255,255,0.4)';
-  ctx.fillText('CPO TRACK',S/2,124);
+  ctx.font='600 13px Inter, Arial, sans-serif';
+  ctx.fillStyle=gold; ctx.letterSpacing='3px';
+  ctx.fillText('CPO TRACK  ·  SIMULATION 5',C,114);
+  ctx.letterSpacing='0';
 
-  // Large score ring
-  const cx=S/2, cy=490, r=260, lw=28;
-  ctx.beginPath();ctx.arc(cx,cy,r,0,Math.PI*2);
-  ctx.strokeStyle='rgba(255,255,255,0.07)'; ctx.lineWidth=lw; ctx.stroke();
+  ctx.strokeStyle='rgba(201,168,76,0.3)'; ctx.lineWidth=0.8;
+  ctx.beginPath();ctx.moveTo(C-100,134);ctx.lineTo(C+100,134);ctx.stroke();
+  ctx.fillStyle=gold;
+  ctx.beginPath();ctx.moveTo(C,130);ctx.lineTo(C+4,134);ctx.lineTo(C,138);ctx.lineTo(C-4,134);ctx.closePath();ctx.fill();
+
+  ctx.font='bold 36px Inter, Arial, sans-serif';
+  ctx.fillStyle='#ffffff';
+  ctx.fillText('Market Sizing',C,186);
+  ctx.font='bold 36px Inter, Arial, sans-serif';
+  ctx.fillStyle='rgba(255,255,255,0.5)';
+  ctx.fillText('& Unit Economics',C,228);
+
+  ctx.font='16px Inter, Arial, sans-serif';
+  ctx.fillStyle='rgba(255,255,255,0.3)';
+  ctx.fillText('Uber case simulation',C,262);
+
+  const name=state.name||state.email;
+  ctx.font='bold 40px Georgia, "Times New Roman", serif';
+  ctx.fillStyle='#ffffff';
+  ctx.fillText(name,C,320);
+  const nw2=Math.min(ctx.measureText(name).width+40,S-120);
+  const ulGrad=ctx.createLinearGradient(C-nw2/2,0,C+nw2/2,0);
+  ulGrad.addColorStop(0,'rgba(201,168,76,0)'); ulGrad.addColorStop(0.3,'rgba(201,168,76,0.4)');
+  ulGrad.addColorStop(0.5,'rgba(201,168,76,0.55)'); ulGrad.addColorStop(0.7,'rgba(201,168,76,0.4)');
+  ulGrad.addColorStop(1,'rgba(201,168,76,0)');
+  ctx.strokeStyle=ulGrad; ctx.lineWidth=1;
+  ctx.beginPath();ctx.moveTo(C-nw2/2,334);ctx.lineTo(C+nw2/2,334);ctx.stroke();
+
+  const ringCY=560, r=170, lw=22;
+  ctx.beginPath();ctx.arc(C,ringCY,r,0,Math.PI*2);
+  ctx.strokeStyle='rgba(255,255,255,0.06)'; ctx.lineWidth=lw; ctx.stroke();
   const angle=(pct/100)*Math.PI*2-Math.PI/2;
   const ringColor=pct>=90?'#4ade80':pct>=75?'#60a5fa':pct>=60?'#fbbf24':'#f87171';
-  ctx.beginPath();ctx.arc(cx,cy,r,-Math.PI/2,angle);
+  ctx.beginPath();ctx.arc(C,ringCY,r,-Math.PI/2,angle);
   ctx.strokeStyle=ringColor; ctx.lineWidth=lw; ctx.lineCap='round'; ctx.stroke();
+  ctx.lineCap='butt';
 
-  // Score in center
-  ctx.textAlign='center';
-  ctx.font='bold 160px Inter, Arial, sans-serif';
+  ctx.font='bold 120px Inter, Arial, sans-serif';
   ctx.fillStyle='#ffffff';
-  ctx.fillText(pct+'%',cx,cy+52);
+  ctx.fillText(pct+'%',C,ringCY+40);
 
-  // Tier below score
-  ctx.font='bold 34px Inter, Arial, sans-serif';
+  ctx.font='bold 30px Inter, Arial, sans-serif';
   ctx.fillStyle=ringColor;
-  ctx.fillText(tier,cx,cy+108);
+  ctx.fillText(tier,C,ringCY+88);
 
-  // Sim name
-  ctx.font='22px Inter, Arial, sans-serif';
+  const fDivGrad=ctx.createLinearGradient(40,0,S-40,0);
+  fDivGrad.addColorStop(0,'rgba(201,168,76,0)'); fDivGrad.addColorStop(0.3,'rgba(201,168,76,0.2)');
+  fDivGrad.addColorStop(0.5,'rgba(201,168,76,0.3)'); fDivGrad.addColorStop(0.7,'rgba(201,168,76,0.2)');
+  fDivGrad.addColorStop(1,'rgba(201,168,76,0)');
+  ctx.strokeStyle=fDivGrad; ctx.lineWidth=0.6;
+  ctx.beginPath();ctx.moveTo(40,S-100);ctx.lineTo(S-40,S-100);ctx.stroke();
+
+  const sealX=S-90, sealY=S-58;
+  ctx.strokeStyle='rgba(201,168,76,0.28)'; ctx.lineWidth=1;
+  ctx.beginPath();ctx.arc(sealX,sealY,22,0,Math.PI*2);ctx.stroke();
+  ctx.font='bold 14px Arial'; ctx.fillStyle=gold;
+  ctx.fillText('✓',sealX,sealY+5);
+
+  ctx.font='bold 22px Inter, Arial, sans-serif';
   ctx.fillStyle='rgba(255,255,255,0.45)';
-  ctx.fillText('Market Sizing & Unit Economics  ·  SIM 5',cx,cy+152);
+  ctx.fillText('www.cxosimulabs.com',C,S-52);
 
-  // Bottom strip
-  ctx.fillStyle='rgba(255,255,255,0.05)';
-  ctx.fillRect(0,S-110,S,110);
-  ctx.strokeStyle='rgba(255,255,255,0.08)'; ctx.lineWidth=1;
-  ctx.beginPath();ctx.moveTo(0,S-110);ctx.lineTo(S,S-110);ctx.stroke();
-
-  ctx.font='bold 26px Inter, Arial, sans-serif';
-  ctx.fillStyle='rgba(255,255,255,0.55)';
-  ctx.fillText('www.cxosimulabs.com',S/2,S-58);
-
-  ctx.font='18px Inter, Arial, sans-serif';
-  ctx.fillStyle='rgba(255,255,255,0.25)';
-  ctx.fillText('Try the free simulation →',S/2,S-28);
+  ctx.font='14px Inter, Arial, sans-serif';
+  ctx.fillStyle='rgba(255,255,255,0.2)';
+  ctx.fillText('Try the free simulation →',C,S-28);
 }
 
 function getPctTier(){
@@ -1671,7 +1724,7 @@ function getPctTier(){
 function downloadCert(){
   const {pct,tier}=getPctTier();
   const canvas=document.getElementById('certCanvas');
-  canvas.width=900; canvas.height=620;
+  canvas.width=1200; canvas.height=850;
   drawCertificate(pct,tier);
   const link=document.createElement('a');
   link.download=`CXO-Simulabs-Certificate-${(state.name||'').replace(/\s/g,'-')}.png`;
