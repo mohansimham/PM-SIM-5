@@ -164,6 +164,41 @@ body{font-family:'Inter',sans-serif;background:var(--light);color:var(--text);li
 .btn-gold{background:linear-gradient(135deg,#c9a227,#e8c84a);color:#1a1a2e;font-weight:700;padding:10px 24px;border-radius:8px;border:none;cursor:pointer;font-size:.9em;text-decoration:none;display:inline-block;}
 .btn-gold:hover{opacity:.9;transform:translateY(-1px);}
 
+/* LEARN CARDS */
+.learn-wrap{max-width:620px;margin:0 auto;padding:32px 24px;}
+.learn-card{background:var(--white);border-radius:14px;padding:32px;box-shadow:0 2px 12px rgba(0,0,0,.06);display:none;}
+.learn-card.active{display:block;}
+.learn-card .learn-icon{font-size:2.4em;margin-bottom:16px;}
+.learn-card h3{font-size:1.15em;font-weight:800;color:var(--navy);margin-bottom:6px;}
+.learn-card .learn-subtitle{font-size:.85em;color:var(--accent);font-weight:600;margin-bottom:16px;}
+.learn-card p{font-size:.92em;color:#374151;line-height:1.75;margin-bottom:14px;}
+.learn-card .learn-apply{background:var(--accent-light);border-radius:10px;padding:18px;border-left:3px solid var(--accent);margin-top:16px;}
+.learn-card .learn-apply h4{font-size:.82em;font-weight:700;color:var(--accent);text-transform:uppercase;letter-spacing:1px;margin-bottom:8px;}
+.learn-card .learn-apply p{font-size:.88em;color:#374151;margin-bottom:0;}
+.learn-card .learn-example{background:var(--light);border-radius:10px;padding:16px;margin-top:14px;}
+.learn-card .learn-example h4{font-size:.82em;font-weight:700;color:var(--navy);margin-bottom:6px;}
+.learn-card .learn-example p{font-size:.85em;color:var(--muted);margin-bottom:0;font-style:italic;}
+.learn-nav{display:flex;justify-content:space-between;align-items:center;margin-top:24px;}
+.learn-dots{display:flex;gap:8px;}
+.learn-dot{width:10px;height:10px;border-radius:50%;background:var(--border);transition:background .2s;}
+.learn-dot.active{background:var(--accent);}
+.learn-counter{font-size:.82em;color:var(--muted);font-weight:600;}
+
+/* SOURCES & DISCLAIMER */
+.sources-section{background:var(--white);border-radius:12px;padding:24px;margin:20px 0;}
+.sources-toggle{display:flex;align-items:center;justify-content:space-between;cursor:pointer;user-select:none;}
+.sources-toggle h3{font-size:1em;font-weight:700;color:var(--navy);margin:0;}
+.sources-toggle .toggle-icon{font-size:1.2em;color:var(--muted);transition:transform .2s;}
+.sources-toggle .toggle-icon.open{transform:rotate(180deg);}
+.sources-content{display:none;margin-top:16px;padding-top:16px;border-top:1px solid var(--border);}
+.sources-content.open{display:block;}
+.sources-content ul{list-style:none;padding:0;}
+.sources-content li{font-size:.85em;color:#374151;padding:6px 0;border-bottom:1px solid #f0f0f0;line-height:1.6;}
+.sources-content li:last-child{border-bottom:none;}
+.sources-content li a{color:var(--accent);text-decoration:none;}
+.sources-content li a:hover{text-decoration:underline;}
+.sources-content .disclaimer-text{font-size:.82em;color:var(--muted);line-height:1.7;margin-top:14px;padding:14px;background:var(--light);border-radius:8px;}
+
 /* FOOTER */
 footer{background:#0d1117;color:#445566;text-align:center;padding:24px;font-size:.8em;}
 footer a{color:#556677;text-decoration:none;}
@@ -275,8 +310,100 @@ footer a{color:#556677;text-decoration:none;}
         <div class="intro-card"><h4>Competitive Strategy</h4><p>Market entry, pricing dynamics, winner-take-all decisions.</p></div>
       </div>
       <p style="font-size:.85em;color:var(--muted);margin-bottom:20px;">10 questions · Multiple choice · Feedback after every answer · ~15 minutes</p>
-      <button class="btn btn-primary" onclick="startSim()">Start Simulation →</button>
+      <button class="btn btn-primary" onclick="showPhase('learn')">Continue →</button>
     </div>
+  </div>
+</div>
+
+<!-- PHASE: LEARN -->
+<div id="phase-learn" class="phase">
+  <div class="sim-band">
+    <div class="eyebrow">CPO Simulation 5 · Uber</div>
+    <h1>Before You Begin</h1>
+    <p>A quick refresher on the frameworks you'll apply in this simulation.</p>
+  </div>
+  <div class="learn-wrap">
+
+    <div class="learn-card active" data-learn="0">
+      <div class="learn-icon">🌍</div>
+      <h3>Market Sizing</h3>
+      <div class="learn-subtitle">Estimating the size of the opportunity before you invest</div>
+      <p>Market sizing uses TAM (Total Addressable Market), SAM (Serviceable Available Market), and SOM (Serviceable Obtainable Market) to estimate how big an opportunity really is. Bottom-up estimation builds from unit-level data; top-down starts from industry totals.</p>
+      <div class="learn-apply">
+        <h4>How to apply it</h4>
+        <p>Start bottom-up: How many potential users? What would each pay? How often? Multiply up. Then sanity-check top-down against industry reports. Ask: Is this market growing or shrinking? What share can we realistically capture in year 1 vs. year 5?</p>
+      </div>
+      <div class="learn-example">
+        <h4>Example</h4>
+        <p>Uber entering a new city: How many daily commuters? What % would switch from taxis? At what average fare? Bottom-up gives a realistic SOM — not the fantasy TAM investors love to quote.</p>
+      </div>
+      <div class="learn-nav">
+        <span class="learn-counter">1 of 4</span>
+        <div class="learn-dots"><span class="learn-dot active"></span><span class="learn-dot"></span><span class="learn-dot"></span><span class="learn-dot"></span></div>
+        <button class="btn btn-primary" style="width:auto;padding:10px 24px;" onclick="nextLearnCard()">Next →</button>
+      </div>
+    </div>
+
+    <div class="learn-card" data-learn="1">
+      <div class="learn-icon">💰</div>
+      <h3>Unit Economics</h3>
+      <div class="learn-subtitle">Does each transaction make or lose money?</div>
+      <p>Unit economics measures the direct revenues and costs of a single unit of your business — typically one customer or one transaction. Key metrics: CAC (Customer Acquisition Cost), LTV (Lifetime Value), and contribution margin. If LTV > CAC, you have a viable business. If not, growth just accelerates losses.</p>
+      <div class="learn-apply">
+        <h4>How to apply it</h4>
+        <p>Calculate: What does it cost to acquire one customer? How much revenue do they generate over their lifetime? What's the payback period? Ask: Are we subsidising growth or building a sustainable model? What levers can improve LTV or reduce CAC?</p>
+      </div>
+      <div class="learn-example">
+        <h4>Example</h4>
+        <p>Uber spends heavily on driver and rider incentives to grow. If a rider's LTV is $500 but CAC is $50, that's 10x return. But if subsidies push CAC to $400, the model breaks — growth becomes a cash bonfire.</p>
+      </div>
+      <div class="learn-nav">
+        <span class="learn-counter">2 of 4</span>
+        <div class="learn-dots"><span class="learn-dot"></span><span class="learn-dot active"></span><span class="learn-dot"></span><span class="learn-dot"></span></div>
+        <button class="btn btn-primary" style="width:auto;padding:10px 24px;" onclick="nextLearnCard()">Next →</button>
+      </div>
+    </div>
+
+    <div class="learn-card" data-learn="2">
+      <div class="learn-icon">🔎</div>
+      <h3>5 Whys Analysis</h3>
+      <div class="learn-subtitle">Digging to the root cause, not treating symptoms</div>
+      <p>The 5 Whys is a root cause analysis technique: ask "why" five times to drill past symptoms to the underlying problem. Originally from Toyota's production system, it's invaluable for product teams facing operational failures, user churn, or quality issues.</p>
+      <div class="learn-apply">
+        <h4>How to apply it</h4>
+        <p>Start with the problem: "Driver cancellation rates are up 20%." Why? "Drivers are rejecting short trips." Why? "Short trips don't cover their costs." Why? Keep going until you hit a systemic issue you can actually fix — not just a band-aid.</p>
+      </div>
+      <div class="learn-example">
+        <h4>Example</h4>
+        <p>Uber sees surge pricing complaints spike. Why? Prices 5x normal. Why? Not enough drivers. Why? Drivers avoid certain areas. Why? Safety concerns. The fix isn't capping surge — it's addressing driver safety.</p>
+      </div>
+      <div class="learn-nav">
+        <span class="learn-counter">3 of 4</span>
+        <div class="learn-dots"><span class="learn-dot"></span><span class="learn-dot"></span><span class="learn-dot active"></span><span class="learn-dot"></span></div>
+        <button class="btn btn-primary" style="width:auto;padding:10px 24px;" onclick="nextLearnCard()">Next →</button>
+      </div>
+    </div>
+
+    <div class="learn-card" data-learn="3">
+      <div class="learn-icon">⚔️</div>
+      <h3>Competitive Strategy</h3>
+      <div class="learn-subtitle">Winning in winner-take-all markets</div>
+      <p>Competitive strategy in ride-hailing is about network effects, pricing power, and market entry timing. In winner-take-most markets, being first matters — but being best in the right segments matters more. Strategy here means choosing where to compete and how aggressively.</p>
+      <div class="learn-apply">
+        <h4>How to apply it</h4>
+        <p>Ask: Is this a winner-take-all or winner-take-most market? What's our moat — brand, network effects, cost structure? Should we match competitor pricing or differentiate on experience? When does aggressive expansion destroy value instead of creating it?</p>
+      </div>
+      <div class="learn-example">
+        <h4>Example</h4>
+        <p>Uber enters a market where Ola dominates. Subsidise rides to steal share? Launch a premium tier to avoid a price war? Focus on underserved segments like airport rides? Each path has a different competitive logic.</p>
+      </div>
+      <div class="learn-nav">
+        <span class="learn-counter">4 of 4</span>
+        <div class="learn-dots"><span class="learn-dot"></span><span class="learn-dot"></span><span class="learn-dot"></span><span class="learn-dot active"></span></div>
+        <button class="btn btn-primary" style="width:auto;padding:10px 24px;" onclick="startSim()">Start Simulation →</button>
+      </div>
+    </div>
+
   </div>
 </div>
 
@@ -384,6 +511,28 @@ footer a{color:#556677;text-decoration:none;}
       <canvas id="badgeCanvas" width="1080" height="1080" style="display:none;"></canvas>
     </div>
 
+    <!-- Sources & Disclaimer -->
+    <div class="sources-section">
+      <div class="sources-toggle" onclick="this.querySelector('.toggle-icon').classList.toggle('open');this.nextElementSibling.classList.toggle('open');">
+        <h3>Sources & Disclaimer</h3>
+        <span class="toggle-icon">▼</span>
+      </div>
+      <div class="sources-content">
+        <ul>
+          <li>Uber S-1 Filing (SEC, 2019) — <a href="https://www.sec.gov/cgi-bin/browse-edgar?action=getcompany&company=uber" target="_blank">SEC EDGAR</a></li>
+          <li>Uber Investor Relations — Annual reports and earnings calls — <a href="https://investor.uber.com" target="_blank">investor.uber.com</a></li>
+          <li>"Super Pumped: The Battle for Uber" by Mike Isaac (W.W. Norton, 2019)</li>
+          <li>"The Upstarts" by Brad Stone (Little, Brown, 2017)</li>
+          <li>Uber Newsroom — Official announcements — <a href="https://www.uber.com/newsroom" target="_blank">uber.com/newsroom</a></li>
+          <li>Public earnings call transcripts and investor presentations</li>
+          <li>Industry analyses from CB Insights, Crunchbase, and McKinsey</li>
+        </ul>
+        <div class="disclaimer-text">
+          <strong>Disclaimer:</strong> CXO Simulabs is an independent educational platform. Uber and related marks are trademarks of Uber Technologies, Inc. This simulation is not affiliated with, endorsed by, or sponsored by Uber Technologies, Inc. All scenarios are inspired by publicly available information and may include dramatised elements for educational purposes. Dialogue attributed to individuals is fictional and does not represent actual statements. Financial figures are from public filings and published reports where available; some figures are approximations used for educational purposes. This is not a professional certification or accreditation.
+        </div>
+      </div>
+    </div>
+
   </div>
 
   <!-- HUB NAV -->
@@ -432,7 +581,10 @@ footer a{color:#556677;text-decoration:none;}
     </div>
   </div>
 
-  <footer><p>© 2026 CXO Simulabs · <a href="https://www.cxosimulabs.com">cxosimulabs.com</a> · Educational simulation. Not affiliated with Uber Technologies, Inc.</p></footer>
+  <footer>
+    <p>© 2026 CXO Simulabs · <a href="https://www.cxosimulabs.com">cxosimulabs.com</a> · <a href="https://www.cxosimulabs.com/privacy.html">Privacy</a> · <a href="https://www.cxosimulabs.com/terms.html">Terms</a></p>
+    <p style="margin-top:8px;font-size:.75em;color:#334455;max-width:700px;margin-left:auto;margin-right:auto;line-height:1.6;">CXO Simulabs is an independent educational platform. Uber and related marks are trademarks of Uber Technologies, Inc. This simulation is not affiliated with, endorsed by, or sponsored by Uber Technologies, Inc. Scenarios are inspired by publicly available information and may include dramatised elements for educational purposes. This is not a professional certification. All dialogue is fictional and does not represent actual statements by any named individual.</p>
+  </footer>
 </div>
 
 <script>
@@ -1115,6 +1267,18 @@ window.addEventListener('DOMContentLoaded',()=>{
   }
 });
 
+// ─── LEARN CARDS ──────────────────────────────────────────
+let currentLearnCard = 0;
+function nextLearnCard(){
+  const cards = document.querySelectorAll('.learn-card');
+  if(currentLearnCard < cards.length - 1){
+    cards[currentLearnCard].classList.remove('active');
+    currentLearnCard++;
+    cards[currentLearnCard].classList.add('active');
+    window.scrollTo({top:0, behavior:'smooth'});
+  }
+}
+
 // ─── EMAIL / OTP ──────────────────────────────────────────
 function sendOTP(){
   const name  = document.getElementById('input-name').value.trim();
@@ -1472,7 +1636,7 @@ function drawCertificate(pct, tier){
   ctx.letterSpacing='6px';
   ctx.font='600 13px Inter, Arial, sans-serif';
   ctx.fillStyle=gold;
-  ctx.fillText('CERTIFICATE OF COMPLETION',CX,152);
+  ctx.fillText('SIMULATION COMPLETION RECORD',CX,152);
   ctx.letterSpacing='0';
 
   // SECTION 3: NAME
@@ -1496,7 +1660,7 @@ function drawCertificate(pct, tier){
   // SECTION 4: ACHIEVEMENT — Competency HERO
   ctx.font='italic 14px Georgia, serif';
   ctx.fillStyle='rgba(255,255,255,0.38)';
-  ctx.fillText('has demonstrated executive-level competency in',CX,316);
+  ctx.fillText('has completed a learning simulation exploring',CX,316);
 
   ctx.font='bold 28px Inter, Arial, sans-serif';
   ctx.fillStyle='#ffffff';
@@ -1583,7 +1747,7 @@ function drawCertificate(pct, tier){
   ctx.beginPath();ctx.arc(sealX,sealY,sealR2,0,Math.PI*2);ctx.fill();
   ctx.font='bold 7px Inter, Arial, sans-serif';
   ctx.fillStyle=gold; ctx.letterSpacing='1.5px';
-  ctx.fillText('VERIFIED',sealX,sealY-6);
+  ctx.fillText('COMPLETED',sealX,sealY-6);
   ctx.letterSpacing='0';
   ctx.font='bold 18px Arial';
   ctx.fillStyle=gold;
@@ -1599,7 +1763,8 @@ function drawCertificate(pct, tier){
   ctx.textAlign='left';
   ctx.font='10px Inter, Arial, sans-serif';
   ctx.fillStyle='rgba(255,255,255,0.18)';
-  ctx.fillText('© 2026 CXO Simulabs  ·  Educational simulation  ·  Not affiliated with Uber Technologies, Inc.',55,H-32);
+  ctx.fillStyle='rgba(255,255,255,0.5)'; ctx.font='12px Inter, Arial, sans-serif';
+  ctx.fillText('© 2026 CXO Simulabs  ·  Not a professional certification  ·  Not affiliated with Uber Technologies, Inc.',55,H-32);
   ctx.textAlign='right';
   ctx.fillStyle='rgba(255,255,255,0.22)';
   ctx.font='bold 10px Inter, Arial, sans-serif';
