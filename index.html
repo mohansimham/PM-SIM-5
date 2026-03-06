@@ -795,6 +795,7 @@ let state = {
 const API_BASE = 'https://cxo-api.mohansimham.workers.dev';
 const SIM_ID = 'cpo5';
 const Q = {};
+let authToken = null;
 
 // ─── PHASE MANAGEMENT ─────────────────────────────────────
 function showPhase(id){
@@ -935,6 +936,12 @@ function verifyOTP(){
   clearInterval(state.timerInterval);
   okEl.style.display='block';
   gtag('event','email_verified',{sim:'CPO-SIM-5-Uber'});
+  // Request auth token from API
+  fetch(`${API_BASE}/api/auth`,{
+    method:'POST',
+    headers:{'Content-Type':'application/json'},
+    body:JSON.stringify({email:state.email,simId:SIM_ID})
+  }).then(r=>r.json()).then(d=>{authToken=d.token;}).catch(()=>{});
   setTimeout(()=>{
     document.getElementById('attempt-badge-display').textContent = `🎯 Attempt ${state.currentAttempt} of 2`;
     showPhase('intro');
@@ -951,7 +958,9 @@ function resendOTP(){
 async function startSim(){
   if(!Q[state.currentAttempt]){
     try{
-      const res=await fetch(`${API_BASE}/api/questions/${SIM_ID}/${state.currentAttempt}`);
+      const res=await fetch(`${API_BASE}/api/questions/${SIM_ID}/${state.currentAttempt}`,{
+        headers:authToken?{'Authorization':`Bearer ${authToken}`}:{}
+      });
       if(!res.ok) throw new Error('API error '+res.status);
       const data=await res.json();
       Q[state.currentAttempt]=data.questions;
